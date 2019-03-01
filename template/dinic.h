@@ -35,7 +35,7 @@ struct directed_graph
         this->n_edge = 0;
         memset(head + 1, -1, sizeof(int) * n_node);
     }
-    void add_edge(int from, int to, int weight)
+    void add_edge(int from, int to, ll weight)
     {
         edge &e = edges[n_edge];
         e.from = from;
