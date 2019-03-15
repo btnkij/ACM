@@ -1,8 +1,8 @@
 /**
-* Number:hdu5775
-* Title:Bubble Sort
+* Number:hdu5763
+* Title:Another Meaning
 * Status:AC
-* Tag:[树状数组, 逆序对]
+* Tag:[kmp, dp]
 **/
 
 #include <cstdio>
@@ -30,43 +30,46 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-
-struct binary_indexed_tree
+int dp[100010];
+int nxt[100010];
+void init_nxt(const char* pat)
 {
-    int data[100010];
-    int size; // 最大的下标
-    void clear(int size)
+    int pre = -1, cur = 0;
+    nxt[0] = -1;
+    while(pat[cur])
     {
-        this->size = size;
-        memset(data + 1, 0, sizeof(int) * size);
-    }
-    // 原数组 arr[idx] += delta
-    void add(int idx, int delta)
-    {
-        while (idx <= size)
+        if(pre == -1 || pat[pre] == pat[cur])
         {
-            data[idx] += delta;
-            idx += idx & -idx;
+            pre++, cur++;
+            nxt[cur] = (pat[pre] == pat[cur] ? nxt[pre] : pre); // next数组优化，表示最终回退位置
+            // nxt[cur] = pre; //不优化，表示最大前后缀长度
+        }
+        else
+        {
+            pre = nxt[pre];
         }
     }
-    // 查询区间 [1, end] 的和
-    int query_sum(int end)
-    {
-        int sum = 0;
-        while (end)
-        {
-            sum += data[end];
-            end ^= end & -end;
-        }
-        return sum;
-    }
-}bit;
-
-int arr[100010];
-struct Node
+}
+void kmp(const char* dst, const char* pat)
 {
-    int pos,rev;
-}nodes[100010];
+    int i = 0, j = 0;
+    while(dst[i])
+    {
+        if(j == -1 || dst[i] == pat[j])
+        {
+            i++, j++;
+            if(pat[j] == '\0')
+            {
+                dp[i]=1;
+                j=nxt[j];
+            }
+        }
+        else j = nxt[j];
+    }
+}
+
+const int MOD=1000000007;
+char A[100010], B[100010];
 int main()
 {
 #ifdef __DEBUG__
@@ -76,27 +79,22 @@ int main()
     int T; readi(T);
     rep(kase,1,T)
     {
-        int n; readi(n);
-        bit.clear(n+2);
-        rep(i,1,n)
+        reads(A); reads(B);
+        init_nxt(B);
+        int la=strlen(A), lb=strlen(B);
+        dp[0]=1;
+        rep(i,1,la)dp[i]=0;
+        kmp(A,B);
+        rep(i,1,la)
         {
-            readi(arr[i]);
-            nodes[arr[i]].pos=i;
+            if(!dp[i])dp[i]=dp[i-1];
+            else
+            {
+                dp[i]=dp[i-1];
+                if(i>=lb)dp[i]=(dp[i]+dp[i-lb])%MOD;
+            }
         }
-        for(int i=n;i>=1;i--)
-        {
-            nodes[arr[i]].rev=bit.query_sum(arr[i]);
-            bit.add(arr[i],1);
-        }
-        printf("Case #%d:",kase);
-        rep(i,1,n)
-        {
-            Node& node=nodes[i];
-            int lt=min(node.pos,i);
-            int rt=max(i,node.pos+node.rev);
-            printf(" %d",abs(rt-lt));
-        }
-        putchar('\n');
+        printf("Case #%d: %d\n",kase,dp[la]);
     }
     return 0;
 }

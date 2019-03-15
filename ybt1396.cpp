@@ -54,7 +54,7 @@ void dfs(int u)
     for(int i=head[u];~i;i=nxt[i])
     {
         int v=edges[i].to;
-        if(ok)dfs(v);
+        if(ok && sorted[v]==-1)dfs(v);
         if(!ok)return;
         ord=max(ord,sorted[v]+1);
     }
@@ -131,12 +131,12 @@ int main()
         reads(buf1);
         for(char* p=buf1;*p!='\0';p++)
         {
-            if(sorted[*p]==-1)
+            if(sorted[*p-'a']==-1)
             {
                 ok=false;
                 break;
             }
-            *p=trans[sorted[*p]];
+            *p='a'+trans[tail-1-sorted[*p-'a']];
         }
     }
     if(ok)printf(buf1);
