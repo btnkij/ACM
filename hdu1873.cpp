@@ -1,6 +1,6 @@
 /**
-* Number:D
-* Title:看病要排队 
+* Number:hdu1873
+* Title:看病要排队
 * Status:AC
 * Tag:[优先队列]
 **/
