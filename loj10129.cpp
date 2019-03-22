@@ -1,3 +1,10 @@
+/**
+* Number:p3373 loj10129
+* Title:「一本通 4.3 练习 3」维护序列 
+* Status:AC
+* Tag:[线段树]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -119,8 +126,9 @@ int main()
     freopen("in.txt","r",stdin);
     freopen("out.txt","w",stdout);
 #endif
-    cin>>n>>m>>mod;
+    cin>>n>>mod;
     build(1,1,n);
+    cin>>m;
     while(m--)
     {
         int op,x,y;

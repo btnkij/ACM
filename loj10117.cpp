@@ -1,3 +1,10 @@
+/**
+* Number:ybt1539, loj10117
+* Title:简单题
+* Status:AC
+* Tag:[树状数组]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -10,7 +17,7 @@ using namespace std;
 
 #define INF 0x3f3f3f3f
 #define PI acos(-1)
-typedef long long ll;
+typedef int ll;
 
 inline int readi(int& i1) { return scanf("%d", &i1); }
 inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
@@ -23,35 +30,60 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+
+struct binary_indexed_tree
+{
+    int data[100010];
+    int size; // 最大的下标
+    void clear(int size)
+    {
+        this->size = size;
+        memset(data + 1, 0, sizeof(ll) * size);
+    }
+    // 原数组 arr[idx] += delta
+    void add(int idx, ll delta)
+    {
+        while (idx <= size)
+        {
+            data[idx] += delta;
+            idx += idx & -idx;
+        }
+    }
+    // 查询区间 [1, end] 的和
+    ll query_sum(int end)
+    {
+        ll sum = 0;
+        while (end)
+        {
+            sum += data[end];
+            end ^= end & -end;
+        }
+        return sum;
+    }
+}T;
+
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    int n,m; readi(n,m);
+    T.size=n;
+    while(m--)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
+        int t; readi(t);
+        if(t==1)
         {
-            repne(j,i+1,ub)
-            {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
-            }
+            int L,R; readi(L,R);
+            T.add(L, 1);
+            T.add(R+1, -1);
         }
-        printf("Case %d: %lld\n",kase,ans);
+        else if(t==2)
+        {
+            int i; readi(i);
+            printf("%d\n",(T.query_sum(i)%2+2)%2);
+        }
     }
     return 0;
 }

@@ -1,10 +1,17 @@
+/**
+* Number:ybt1542, loj10120
+* Title:【例 2】最敏捷的机器人
+* Status:AC
+* Tag:[单调队列]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <vector>
-#include <queue>
+#include <deque>
 #include <stack>
 using namespace std;
 
@@ -23,35 +30,45 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+struct Node
+{
+    int val, idx;
+};
+deque<Node> Qmax,Qmin;
+void enqueue(Node& node)
+{
+    while(!Qmax.empty() && Qmax.back().val<=node.val)
+        Qmax.pop_back();
+    Qmax.push_back(node);
+    while(!Qmin.empty() && Qmin.back().val>=node.val)
+        Qmin.pop_back();
+    Qmin.push_back(node);
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    int n,k; readi(n,k);
+    int cur=1;
+    repne(i,1,k)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
-        {
-            repne(j,i+1,ub)
-            {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
-            }
-        }
-        printf("Case %d: %lld\n",kase,ans);
+        Node node;
+        readi(node.val);
+        node.idx=i;
+        enqueue(node);
+    }
+    rep(i,k,n)
+    {
+        Node node;
+        readi(node.val);
+        node.idx=i;
+        enqueue(node);
+        while(Qmax.front().idx<cur)Qmax.pop_front();
+        while(Qmin.front().idx<cur)Qmin.pop_front();
+        printf("%d %d\n",Qmax.front().val, Qmin.front().val);
+        cur++;
     }
     return 0;
 }

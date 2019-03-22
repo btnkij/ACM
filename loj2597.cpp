@@ -1,3 +1,10 @@
+/**
+* Number:ybt1546, loj2597
+* Title:「NOIP2011」选择客栈 
+* Status:AC
+* Tag:[dp]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -23,35 +30,35 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+vector<int> type;
+int cnt[10010];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    int n,k,p; readi(n,k,p);
+    ll ans=0;
+    repne(i,0,n)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
+        int a, b; readi(a, b);
+        if(b<=p)
         {
-            repne(j,i+1,ub)
+            repne(j,0,type.size())
             {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
+                cnt[type[j]]++;
             }
+            type.clear();
+            ans+=cnt[a];
+            cnt[a]++;
         }
-        printf("Case %d: %lld\n",kase,ans);
+        else
+        {
+            type.push_back(a);
+            ans+=cnt[a];
+        }
     }
+    printf("%lld",ans);
     return 0;
 }

@@ -1,3 +1,10 @@
+/**
+* Number:loj130
+* Title: 树状数组 1 ：单点修改，区间查询
+* Status:AC
+* Tag:[树状数组]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -23,35 +30,50 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+int n,m;
+ll sum[1000010];
+void add(ll x, ll delta)
+{
+    while(x<=n)
+    {
+        sum[x]+=delta;
+        x+=x&-x;
+    }
+}
+ll query(ll x)
+{
+    ll ans=0;
+    while(x)
+    {
+        ans+=sum[x];
+        x^=x&-x;
+    }
+    return ans;
+}
+
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    readi(n,m);
+    rep(i,1,n)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
+        int t; readi(t);
+        add(i,t);
+    }
+    while(m--)
+    {
+        int t,a,b; readi(t,a,b);
+        if(t==2)
         {
-            repne(j,i+1,ub)
-            {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
-            }
+            printf("%lld\n",query(b)-query(a-1));
         }
-        printf("Case %d: %lld\n",kase,ans);
+        else if(t==1)
+        {
+            add(a,b);
+        }
     }
     return 0;
 }

@@ -1,3 +1,10 @@
+/**
+* Number:D
+* Title:看病要排队 
+* Status:AC
+* Tag:[优先队列]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -23,35 +30,56 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+struct Node
+{
+    int id, prior; // ID, 优先级
+    bool operator<(const Node& rhs)const
+    {
+        // 优先级大的排前面, 如果优先级相等, ID小的排前面
+        return prior < rhs.prior || (prior == rhs.prior && id > rhs.id);
+    }
+};
+priority_queue<Node> Q[4];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    int n;
+    while(readi(n) != EOF)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
+        rep(i, 1, 3)
         {
-            repne(j,i+1,ub)
+            Q[i] = priority_queue<Node>(); // 清空优先队列
+        }
+        int id = 1;
+        while(n--)
+        {
+            char op[8];
+            int A, B;
+            reads(op);
+            if(op[0] == 'I') // IN
             {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
+                readi(A, B);
+                Q[A].push((Node){id, B});
+                id++;
+            }
+            else if(op[0] == 'O') // OUT
+            {
+                readi(A);
+                if(Q[A].empty()) // 如果优先队列为空
+                {
+                    printf("EMPTY\n");
+                }
+                else // 否则优先级最高的病人出队
+                {
+                    printf("%d\n", Q[A].top().id);
+                    Q[A].pop();
+                }
+                
             }
         }
-        printf("Case %d: %lld\n",kase,ans);
     }
     return 0;
 }

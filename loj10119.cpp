@@ -1,3 +1,10 @@
+/**
+* Number:ybt1541, loj10119
+* Title:【例 1】数列区间最大值
+* Status:AC
+* Tag:[st表]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -23,35 +30,43 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+const int MAXN = 1e5+10;
+const int MAXL = 16;
+int dp[MAXN][MAXL+4], mm[MAXN];
+void init(int n)
+{
+    repne(i,2,n)
+        mm[i] = i&(i-1) ? mm[i-1] : mm[i-1]+1;
+    for(int k=1; k<=MAXL; k++)
+    {
+        int len=1<<k;
+        for(int rt=len; rt<=n; rt++)
+        {
+            int lt=rt-len+1;
+            dp[lt][k]=max(dp[lt][k-1], dp[rt-(len>>1)+1][k-1]);
+        }
+    }
+}
+int query(int lt,int rt)
+{
+    int len=rt-lt+1;
+    int k=mm[len-1];
+    return max(dp[lt][k], dp[rt-(1<<k)+1][k]);
+}
+
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    int n,m; readi(n,m);
+    rep(i,1,n)readi(dp[i][0]);
+    init(n);
+    while(m--)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
-        {
-            repne(j,i+1,ub)
-            {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
-            }
-        }
-        printf("Case %d: %lld\n",kase,ans);
+        int x,y; readi(x,y);
+        printf("%d\n",query(x,y));
     }
     return 0;
 }

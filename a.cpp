@@ -23,7 +23,15 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+ll gcd(ll a,ll b)
+{
+    return b==0?a:gcd(b,a%b);
+}
+ll lcm(ll a,ll b)
+{
+    return a*b/gcd(a,b);
+}
+
 int main()
 {
 #ifdef __DEBUG__
@@ -33,25 +41,44 @@ int main()
     int T; readi(T);
     rep(kase,1,T)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
-        {
-            repne(j,i+1,ub)
-            {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
+        // ll a,b,c,L,ans;
+        // cin>>a>>b>>L;
+        // ll d=lcm(a,b);
+        // ll g=gcd(a,b);
+        // bool flag=true;
+        // if(L%d!=0)
+        // {
+        //     flag=false;
+        // }
+        // else
+        // {
+        //     // ans=L*L/d/lcm(d,L/d);
+        //     ll t=L/d;
+        //     ans = t * gcd(d,t);
+        //     flag=true;
+        // }
+        // printf("Case %d: ",kase);
+        // if(!flag)printf("impossible\n");
+        // else cout<<ans<<endl;
+        int flag=0;
+        ll a,b,c,L,ans;
+        scanf("%lld %lld %lld",&a,&b,&L);
+        ll d=lcm(a,b),e=gcd(a,b);
+        ll res=L/d;
+        for(ll i=res;i<=L;i+=res){
+            ll lab=e;
+            if(i%d==0){
+                lab=d;
+            }
+            if(lab*L==i*d){
+                flag=1;
+                ans=i;
+                break;
             }
         }
-        printf("Case %d: %lld\n",kase,ans);
+        printf("Case %d: ",kase);
+        if(!flag)printf("impossible\n");
+        else printf("%lld\n",ans);
     }
     return 0;
 }
