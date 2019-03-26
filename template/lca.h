@@ -41,13 +41,13 @@ struct directed_graph
         nxt[n_edge] = head[from];
         head[from] = n_edge++;
     }
-}G;
+};
 
 struct lca
 {
     directed_graph* G;
     int tin[MAXN], tout[MAXN], timer;
-    int fa[MAXN][LOGN]; // fa[i][j]: i的(1<<(j-1))级祖先, fa[i][0]=i
+    int fa[MAXN][LOGN]; // fa[i][j]: i的(1<<j)级祖先
     int dis[MAXN]; // dis[i]: i到根结点的距离
     void dfs(int u, int pre)
     {
@@ -86,4 +86,4 @@ struct lca
                 x = fa[x][i];
         return fa[x][0];
     }
-}solver;
+};

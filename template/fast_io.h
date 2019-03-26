@@ -7,7 +7,7 @@
 #include <cstdio>
 
 // 读非负int
-int readu()
+inline int readu()
 {
     int num = 0;
     char ch;
@@ -17,7 +17,7 @@ int readu()
 }
 
 // 读任意int
-int read()
+inline int read()
 {
     int num = 0;
     char ch;
