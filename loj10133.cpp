@@ -161,7 +161,6 @@ struct
     }
     ll upperBound(int top, int x, ll weight)
     {
-        // printf("top %d x %d w %lld\n",top,x,weight);
         ll t = -INF;
         for(int i = LOGN - 1; i >= 0; i--)
             if(!isAncestor(fa[x][i], top))
@@ -172,7 +171,6 @@ struct
             }
         if(max1[x][0] < weight)t = max(t, max1[x][0]);
         if(max2[x][0] < weight)t = max(t, max2[x][0]);
-        // printf("%lld\n",t);
         return t;
     }
 }lca;
