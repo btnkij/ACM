@@ -86,3 +86,52 @@ struct kruskal
         return -1;
     }
 };
+
+
+/**
+ * 
+ * Prim
+ * 
+**/
+
+#include <queue>
+
+struct
+{
+    struct HeapNode
+    {
+        int eid;
+        ll weight;
+        bool operator<(const HeapNode& rhs)const
+        {
+            return weight > rhs.weight;
+        }
+    };
+    bool vis[MAXN], tree[MAXM];
+    ll operator()(directed_graph* G)
+    {
+        // memset(vis + 1, false, sizeof(bool) * G->n_node);
+        // memset(tree, false, sizeof(bool) * G->n_edge);
+        ll ans = 0;
+        priority_queue<HeapNode> Q;
+        vis[1] = true;
+        int cnt = 1;
+        for(int i = G->head[1]; ~i; i = G->nxt[i])
+            Q.push((HeapNode){i, G->edges[i].weight});
+        while(!Q.empty())
+        {
+            int eid = Q.top().eid;
+            directed_graph::edge& e = G->edges[eid];
+            Q.pop();
+            if(vis[e.to])continue;
+            vis[e.to] = true;
+            tree[eid] = tree[eid ^ 1] = true;
+            cnt++;
+            ans += e.weight;
+            for(int i = G->head[e.to]; ~i; i = G->nxt[i])
+                if(!vis[G->edges[i].to])
+                    Q.push((HeapNode){i, G->edges[i].weight});
+        }
+        return cnt == G->n_node ? ans : -1;
+    }
+};
