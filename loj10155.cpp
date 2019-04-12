@@ -1,3 +1,10 @@
+/**
+* Number:loj10155
+* Title:「一本通 5.2 例 3」数字转换 
+* Status:AC
+* Tag:[dfs]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -11,6 +18,7 @@ using namespace std;
 #define INF 0x3f3f3f3f
 #define PI acos(-1)
 typedef long long ll;
+typedef unsigned long long ull;
 
 inline int readi(int& i1) { return scanf("%d", &i1); }
 inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
@@ -23,62 +31,66 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-ll gcd(ll a,ll b)
+struct Edge
 {
-    return b==0?a:gcd(b,a%b);
-}
-ll lcm(ll a,ll b)
+    int from,to;
+}edges[50010*2];
+int head[50010],nxt[50010*2],tot;
+void add_edge(int from,int to)
 {
-    return a*b/gcd(a,b);
+    Edge& e=edges[tot];
+    e.from=from, e.to=to;
+    nxt[tot]=head[from];
+    head[from]=tot++;
 }
 
+int maxdep, id;
+int dep;
+void dfs(int u, int pre)
+{
+    if(maxdep<dep)
+    {
+        maxdep=dep;
+        id=u;
+    }
+    for(int i=head[u];~i;i=nxt[i])
+    {
+        Edge& e=edges[i];
+        if(e.to==pre)continue;
+        dep++;
+        dfs(e.to, u);
+        dep--;
+    }
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    rep(kase,1,T)
+    int n; readi(n);
+    rep(i,1,n)head[i]=-1;
+    rep(i,2,n)
     {
-        // ll a,b,c,L,ans;
-        // cin>>a>>b>>L;
-        // ll d=lcm(a,b);
-        // ll g=gcd(a,b);
-        // bool flag=true;
-        // if(L%d!=0)
-        // {
-        //     flag=false;
-        // }
-        // else
-        // {
-        //     // ans=L*L/d/lcm(d,L/d);
-        //     ll t=L/d;
-        //     ans = t * gcd(d,t);
-        //     flag=true;
-        // }
-        // printf("Case %d: ",kase);
-        // if(!flag)printf("impossible\n");
-        // else cout<<ans<<endl;
-        int flag=0;
-        ll a,b,c,L,ans;
-        scanf("%lld %lld %lld",&a,&b,&L);
-        ll d=lcm(a,b),e=gcd(a,b);
-        ll res=L/d;
-        for(ll i=res;i<=L;i+=res){
-            ll lab=e;
-            if(i%d==0){
-                lab=d;
-            }
-            if(lab*L==i*d){
-                flag=1;
-                ans=i;
-                break;
+        int sum=1;
+        for(int j=2;j*j<=i;j++)
+        {
+            if(i%j==0)
+            {
+                sum+=j;
+                if(i/j>j)sum+=i/j;
             }
         }
-        printf("Case %d: ",kase);
-        if(!flag)printf("impossible\n");
-        else printf("%lld\n",ans);
+        if(sum<i)
+        {
+            add_edge(sum,i);
+            add_edge(i,sum);
+        }
     }
+    maxdep=dep=0;
+    dfs(1,0);
+    maxdep=dep=0;
+    dfs(id, 0);
+    printf("%d",maxdep);
     return 0;
 }

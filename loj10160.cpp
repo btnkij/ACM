@@ -1,8 +1,8 @@
 /**
-* Number:loj10035
-* Title:「一本通 2.1 练习 1」Power Strings 
+* Number:loj10160
+* Title:「一本通 5.2 练习 3」周年纪念晚会 
 * Status:AC
-* Tag:[kmp]
+* Tag:[树型dp]
 **/
 
 #include <cstdio>
@@ -17,7 +17,8 @@ using namespace std;
 
 #define INF 0x3f3f3f3f
 #define PI acos(-1)
-typedef int ll;
+typedef long long ll;
+typedef unsigned long long ull;
 
 inline int readi(int& i1) { return scanf("%d", &i1); }
 inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
@@ -30,40 +31,61 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int nxt[1000100];
-void init_nxt(char* s, int len)
+struct Edge
 {
-    nxt[0]=-1;
-    int pre=0,cur=1;
-    while(cur<len)
-    {
-        if(pre==-1 || s[cur]==s[pre])
-        {
-            cur++, pre++;
-            nxt[cur]=pre;
-        }
-        else
-        {
-            pre=nxt[pre];
-        }
-    }
+    int from,to;
+}edges[6010*2];
+int head[6010],nxt[6010*2],tot;
+void add_edge(int from,int to)
+{
+    Edge& e=edges[tot];
+    e.from=from, e.to=to;
+    nxt[tot]=head[from];
+    head[from]=tot++;
 }
 
-char s[1000100];
+int deg[6010];
+int dp[6010][2];
+int p[6010];
+void dfs(int u)
+{
+    dp[u][1]=p[u];
+    for(int i=head[u];~i;i=nxt[i])
+    {
+        int v=edges[i].to;
+        dfs(v);
+        dp[u][0]+=max(dp[v][0], dp[v][1]);
+        dp[u][1]+=dp[v][0];
+    }
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    while(reads(s)!=EOF && !(s[0]=='.' && s[1]=='\0'))
+    int n; readi(n);
+    rep(i,1,n)
     {
-        int len=strlen(s);
-        init_nxt(s,len);
-        if((nxt[len]<<1)>=len && len%(len-nxt[len])==0)
-            printf("%d\n",len/(len-nxt[len]));
-        else
-            printf("1\n");
+        head[i]=-1;
+        readi(p[i]);
     }
+    head[0]=-1;
+    int k,l;
+    while(readi(k,l)!=EOF && k && l)
+    {
+        add_edge(l,k);
+        deg[k]++;
+    }
+    int ans=0;
+    rep(i,1,n)
+    {
+        if(deg[i]==0)
+        {
+            add_edge(0,i);
+        }
+    }
+    dfs(0);
+    printf("%d",dp[0][0]);
     return 0;
 }

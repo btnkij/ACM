@@ -1,8 +1,8 @@
 /**
-* Number:loj10035
-* Title:「一本通 2.1 练习 1」Power Strings 
+* Number:loj10154
+* Title:「一本通 5.2 例 2」选课 
 * Status:AC
-* Tag:[kmp]
+* Tag:[记忆化搜索]
 **/
 
 #include <cstdio>
@@ -17,7 +17,8 @@ using namespace std;
 
 #define INF 0x3f3f3f3f
 #define PI acos(-1)
-typedef int ll;
+typedef long long ll;
+typedef unsigned long long ull;
 
 inline int readi(int& i1) { return scanf("%d", &i1); }
 inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
@@ -30,40 +31,51 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int nxt[1000100];
-void init_nxt(char* s, int len)
+struct Edge
 {
-    nxt[0]=-1;
-    int pre=0,cur=1;
-    while(cur<len)
-    {
-        if(pre==-1 || s[cur]==s[pre])
-        {
-            cur++, pre++;
-            nxt[cur]=pre;
-        }
-        else
-        {
-            pre=nxt[pre];
-        }
-    }
+    int from,to;
+}edges[220];
+int head[110],nxt[220],tot;
+void add_edge(int from,int to)
+{
+    Edge& e=edges[tot];
+    e.from=from, e.to=to;
+    nxt[tot]=head[from];
+    head[from]=tot++;
 }
 
-char s[1000100];
+int w[110];
+int dp[110][110];
+bool vis[110][110];
+int dfs(int eid, int m)
+{
+    if(eid==-1 || m<=0)return 0;
+    int u=edges[eid].to;
+    if(vis[u][m])return dp[u][m];
+    int& ans=dp[u][m];
+    ans=0;
+    for(int i=0;i<m;i++)
+    {
+        ans=max(ans, dfs(head[u], i) + dfs(nxt[eid], m-i-1));
+    }
+    ans+=w[u];
+    ans=max(ans, dfs(nxt[eid], m));
+    vis[u][m]=true;
+    return ans;
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    while(reads(s)!=EOF && !(s[0]=='.' && s[1]=='\0'))
+    int n,m; readi(n,m);
+    mset(head,-1);
+    rep(i,1,n)
     {
-        int len=strlen(s);
-        init_nxt(s,len);
-        if((nxt[len]<<1)>=len && len%(len-nxt[len])==0)
-            printf("%d\n",len/(len-nxt[len]));
-        else
-            printf("1\n");
+        int pre; readi(pre,w[i]);
+        add_edge(pre,i);
     }
+    printf("%d",dfs(head[0],m));
     return 0;
 }

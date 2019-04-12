@@ -1,3 +1,10 @@
+/**
+* Number:scu4119
+* Title:Function
+* Status:AC
+* Tag:[数论]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -11,6 +18,7 @@ using namespace std;
 #define INF 0x3f3f3f3f
 #define PI acos(-1)
 typedef long long ll;
+typedef unsigned long long ull;
 
 inline int readi(int& i1) { return scanf("%d", &i1); }
 inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
@@ -23,42 +31,41 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=20;
-ll fact[MAXN];
-vector<int> v;
+ll f(ll x)
+{
+    return x^x+1;
+}
+ll count(ll x)
+{
+    ll ans=0,i=0;
+    while(true)
+    {
+        ll mask=(1<<i)-1;
+        if(mask>x)break;
+        ans+=((x-(1<<i)+1)/(2<<i)+1)*(i+1);
+        // printf("%lld %lld\n",i,((x-(1<<i)+1)/(2<<i)+1));
+        i++;
+    }
+    return ans;
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    fact[0]=fact[1]=1;
-    repne(i,2,MAXN)fact[i]=i*fact[i-1];
     int T; readi(T);
-    rep(kase,1,T)
+    while(T--)
     {
-        ll n; scanf("%lld",&n);
-        v.clear();
-        for(int i=19;i>=0;i--)
+        ll a,b; scanf("%lld %lld",&a,&b);
+        if(a==0)
         {
-            if(n>=fact[i])
-            {
-                n-=fact[i];
-                v.push_back(i);
-            }
+            printf("%lld\n",count(b));
         }
-        printf("Case %d: ",kase);
-        if(n)printf("impossible\n");
         else
         {
-            for(int i=v.size()-1;i>=0;i--)
-            {
-                printf("%d!",v[i]);
-                if(i)putchar('+');
-            }
-            printf("\n");
+            printf("%lld\n",count(b)-count(a-1));
         }
-        
     }
     return 0;
 }

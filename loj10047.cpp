@@ -1,6 +1,6 @@
 /**
-* Number:loj10035
-* Title:「一本通 2.1 练习 1」Power Strings 
+* Number:loj10047
+* Title:「一本通 2.2 练习 3」似乎在梦中见过的样子 
 * Status:AC
 * Tag:[kmp]
 **/
@@ -17,7 +17,8 @@ using namespace std;
 
 #define INF 0x3f3f3f3f
 #define PI acos(-1)
-typedef int ll;
+typedef long long ll;
+typedef unsigned long long ull;
 
 inline int readi(int& i1) { return scanf("%d", &i1); }
 inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
@@ -30,17 +31,19 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int nxt[1000100];
-void init_nxt(char* s, int len)
+int k;
+int nxt[1600];
+void getNxt(char* s, int len)
 {
     nxt[0]=-1;
-    int pre=0,cur=1;
+    int pre=-1,cur=0;
     while(cur<len)
     {
-        if(pre==-1 || s[cur]==s[pre])
+        if(pre==-1||s[pre]==s[cur])
         {
-            cur++, pre++;
+            pre++, cur++;
             nxt[cur]=pre;
+            // if(nxt[pre]>=k)nxt[cur]=nxt[pre];
         }
         else
         {
@@ -49,21 +52,35 @@ void init_nxt(char* s, int len)
     }
 }
 
-char s[1000100];
+char s[1600];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
+    freopen("out1.txt", "w", stdout);
 #endif
-    while(reads(s)!=EOF && !(s[0]=='.' && s[1]=='\0'))
+    reads(s);
+    int len=strlen(s);
+    readi(k);
+    int ans=0;
+    repne(i,0,len)
     {
-        int len=strlen(s);
-        init_nxt(s,len);
-        if((nxt[len]<<1)>=len && len%(len-nxt[len])==0)
-            printf("%d\n",len/(len-nxt[len]));
-        else
-            printf("1\n");
+        getNxt(s+i,len-i);
+        // rep(i,1,len-i)printf("%d ",nxt[i]);
+        // printf("\n");
+        int ub=len-i;
+        rep(j,(k<<1)+1,ub)
+        {
+            int t=nxt[j];
+            while((t<<1)>=j)t=nxt[t];
+            if(t>=k)
+            // if(t>=k && (t<<1)<j)
+            {
+                ans++;
+                printf("%d %d\n",i,j);
+            }
+        }
     }
+    printf("%d",ans);
     return 0;
 }

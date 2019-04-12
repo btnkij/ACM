@@ -1,3 +1,10 @@
+/**
+* Number:lightoj1189
+* Title:Sum of Factorials
+* Status:AC
+* Tag:[贪心]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -23,35 +30,42 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int arr[2010];
+const int MAXN=20;
+ll fact[MAXN];
+vector<int> v;
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
+    fact[0]=fact[1]=1;
+    repne(i,2,MAXN)fact[i]=i*fact[i-1];
     int T; readi(T);
     rep(kase,1,T)
     {
-        int n; readi(n);
-        repne(i,0,n)readi(arr[i]);
-        sort(arr,arr+n);
-        int ub=n-1;
-        ll ans=0;
-        repne(i,0,ub)
+        ll n; scanf("%lld",&n);
+        v.clear();
+        for(int i=19;i>=0;i--)
         {
-            repne(j,i+1,ub)
+            if(n>=fact[i])
             {
-                // printf("%d %d\n",arr[i],arr[j]);
-                int len=arr[i]+arr[j];
-                int k=lower_bound(arr+j+1,arr+n,len)-arr;
-                k--;
-                // printf("%d\n",arr[k]);
-                if(k<=j || arr[k]<=arr[j])continue;
-                ans+=k-j;
+                n-=fact[i];
+                v.push_back(i);
             }
         }
-        printf("Case %d: %lld\n",kase,ans);
+        printf("Case %d: ",kase);
+        if(n)printf("impossible\n");
+        else
+        {
+            for(int i=v.size()-1;i>=0;i--)
+            {
+                printf("%d!",v[i]);
+                if(i)putchar('+');
+            }
+            printf("\n");
+        }
+        
     }
     return 0;
 }
