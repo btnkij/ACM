@@ -1,3 +1,10 @@
+/**
+* Number:scu2574
+* Title:cards
+* Status:?
+* Tag:[]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>

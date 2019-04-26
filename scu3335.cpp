@@ -1,3 +1,10 @@
+/**
+* Number:scu3335
+* Title:Windy's Route
+* Status:AC
+* Tag:[dijkstra]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>

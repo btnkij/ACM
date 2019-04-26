@@ -1,35 +1,10 @@
 /**
-* Number:loj10145
-* Title:「一本通 4.6 练习 2」郁闷的出纳员 
-* Status:WA
-* Tag:[平衡树, splay]
+ * 
+ * Splay Tree, 伸展树, 平衡树
+ * 
 **/
 
-#include <cstdio>
-#include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
-#include <vector>
-#include <queue>
-#include <stack>
-using namespace std;
-
-#define INF 0x3f3f3f3f
-#define PI acos(-1)
-typedef int ll;
-typedef unsigned long long ull;
-
-inline int readi(int& i1) { return scanf("%d", &i1); }
-inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
-inline int readi(int& i1, int& i2, int& i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
-inline int readi(int& i1, int& i2, int& i3, int& i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
-inline int reads(char* s1) { return scanf("%s", s1); }
-#define mset(mem, val) memset(mem, val, sizeof(mem))
-#define rep(i, begin, end) for (int i = (begin); i <= (end); i++)
-#define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
-#define repne(i, begin, end) for (int i = (begin); i < (end); i++)
-#define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
 template<typename T, int maxn, T inf = 0x7FFFFFFF>
 struct SplayTree
@@ -43,10 +18,6 @@ struct SplayTree
     int tot;
     Node _nul, *nul;
     Node *root, *end, *rend;
-    int size()
-    {
-        return root->rank - 2;
-    }
     Node* createNode(T val)
     {
         Node *nod = &nodes[tot++];
@@ -124,32 +95,17 @@ struct SplayTree
         else link(root = createNode(val), nod, (int)(val > nod->value));
         splay(root, nul);
     }
-    Node* remove(T val)
+    void remove(Node *nod)
     {
-        Node *pre = prevOf(val);
-        Node *nxt = nextOf(val);
+        Node *pre = prevOf(nod->value);
+        Node *nxt = nextOf(nod->value);
         splay(pre, nul);
         splay(nxt, pre);
-        Node *nod = nxt->child[0];
         nod->count--, nod->rank--;
         if(nod->count == 0)nxt->child[0] = nul;
         maintain(nxt);
         maintain(pre);
         root = pre;
-        return nod;
-    }
-    Node* removeRange(T lbound, T rbound)
-    {
-        Node *pre = prevOf(lbound);
-        Node *nxt = nextOf(rbound);
-        splay(pre, nul);
-        splay(nxt, pre);
-        Node *nod = nxt->child[0];
-        nxt->child[0] = nul;
-        maintain(nxt);
-        maintain(pre);
-        root = pre;
-        return nod;
     }
     Node* prevOf(T val)
     {
@@ -172,6 +128,8 @@ struct SplayTree
     Node* findByOrder(int ord)
     {
         ord++;
+        if(ord <= 0)return rend;
+        if(ord > root->rank)return end;
         Node *nod = root;
         while(nod != nul)
         {
@@ -188,51 +146,3 @@ struct SplayTree
         return nod;
     }
 };
-
-SplayTree<int, 100010> tree;
-int main()
-{
-#ifdef __DEBUG__
-    freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
-#endif
-    int n,k; readi(n,k);
-    int base=0;
-    int ans=0;
-    tree.init();
-    rep(i,1,n)
-    {
-        char op[4]; reads(op);
-        int v; readi(v);
-        if(i==26623)
-        {
-            op[1]='a';
-        }
-        if(op[0]=='I')
-        {
-            if(v>=k)
-            {
-                v-=base;
-                tree.insert(v);
-            }
-        }
-        else if(op[0]=='A')
-        {
-            base+=v;
-        }
-        else if(op[0]=='S')
-        {
-            base-=v;
-            ans += tree.removeRange(-INF, k-base-1)->rank;
-        }
-        else if(op[0]=='F')
-        {
-            if(v>tree.size())
-                printf("-1\n");
-            else
-                printf("%d\n", tree.findByOrder(tree.size()-v+1)->value+base);
-        }
-    }
-    printf("%d\n",ans);
-    return 0;
-}

@@ -1,3 +1,10 @@
+/**
+* Number:scu2681
+* Title:平方数 2
+* Status:AC
+* Tag:[贪心]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>

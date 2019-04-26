@@ -1,3 +1,10 @@
+/**
+* Number:loj40001051
+* Title:「一本通 2.3 例 3」Nikitosh 和异或 
+* Status:AC
+* Tag:[trie]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -24,59 +31,72 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-bool vis[1000010];
-bool win[1000010];
-int ans[1000010];
-bool dfs(int num)
+struct Node
 {
-    if(vis[num])return win[num];
-    int d[8], cnt=0;
-    int tmp=num;
-    win[num]=false;
-    ans[num]=INF;
-    while(tmp)
+    int to[2];
+}nodes[400010*32];
+int tot;
+int find(int s)
+{
+    int p=0;
+    int ans=0;
+    for(int i=30;i>=0;i--)
     {
-        d[cnt++]=tmp%10;
-        tmp/=10;
+        int b=(s>>i)&1;
+        if(nodes[p].to[b^1])b^=1;
+        ans|=(b<<i)^(s&(1<<i));
+        p=nodes[p].to[b];
     }
-    for(int i=0;i<cnt;i++)
-    {
-        for(int j=0;j<=i;j++)
-        {
-            int sub=0;
-            for(int k=i;k>=j;k--)
-            {
-                sub=sub*10+d[k];
-            }
-            if(sub==0 || sub==num)continue;
-            if(dfs(num-sub)^1)
-            {
-                win[num]=true;
-                ans[num]=min(ans[num],sub);
-            }
-        }
-    }
-    vis[num]=true;
-    return win[num];
+    return ans;
 }
+void insert(int s)
+{
+    int p=0;
+    for(int i=30;i>=0;i--)
+    {
+        int b=(s>>i)&1;
+        if(!nodes[p].to[b])
+        {
+            nodes[p].to[b]=tot;
+            nodes[tot]=(Node){0,0};
+            tot++;
+        }
+        p=nodes[p].to[b];
+    }
+}
+
+int num[400010];
+int sum[400010];
+int fro[400010], bac[400010];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    rep(i,0,9)
-    {
-        vis[i]=true;
-        win[i]=false;
-    }
     int n; readi(n);
-    while(n--)
+    rep(i,1,n)readi(num[i]);
+    for(int i=1;i<=n;i++)sum[i]=sum[i-1]^num[i];
+    tot=1;
+    insert(0);
+    for(int i=1;i<=n;i++)
     {
-        int num; readi(num);
-        dfs(num);
-        if(win[num])printf("%d\n",ans[num]);
-        else printf("Bad Game\n");
+        fro[i]=max(fro[i-1], find(sum[i]));
+        insert(sum[i]);
     }
+    tot=1;
+    nodes[0]=(Node){0,0};
+    insert(0);
+    for(int i=n;i>=1;i--)
+    {
+        bac[i]=max(bac[i+1], find(sum[n]^sum[i-1]));
+        insert(sum[n]^sum[i-1]);
+    }
+    int ans=0;
+    for(int i=1;i<n;i++)
+    {
+        ans=max(ans, fro[i]+bac[i+1]);
+    }
+    printf("%d",ans);
     return 0;
 }

@@ -1,7 +1,7 @@
 /**
 * Number:p3369
 * Title:【模板】普通平衡树
-* Status:?
+* Status:AC
 * Tag:[splay tree, 伸展树]
 **/
 
@@ -13,7 +13,6 @@
 #include <vector>
 #include <queue>
 #include <stack>
-#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -32,132 +31,197 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-struct splay_tree
+template<typename T, int maxn, T inf = 0x7FFFFFFF>
+struct SplayTree
 {
-    struct splay_tree_node
+    struct Node
     {
-        int value, count, rank;
-        splay_tree_node *parent, *child[2];
-    }nodes[100010];
-    int tot, size;
-    splay_tree_node *root;
-    inline void _update(splay_tree_node* nod)
+        T value;
+        int count, rank;
+        Node *parent, *child[2];
+    }nodes[maxn];
+    int tot;
+    Node _nul, *nul;
+    Node *root, *end, *rend;
+    int size()
     {
-        nod->rank = nod->child[0]->rank + nod->child[1]->rank + nod->count;
+        return root->rank - 2;
     }
-    inline int _branch(splay_tree_node* nod)
+    Node* createNode(T val)
+    {
+        Node *nod = &nodes[tot++];
+        nod->value = val;
+        nod->count = nod->rank = 1;
+        nod->parent = nod->child[0] = nod->child[1] = nul;
+        return nod;
+    }
+    inline void link(Node *nod, Node *pa, int b)
+    {
+        nod->parent = pa;
+        if(pa != nul)pa->child[b] = nod;
+    }
+    void init()
+    {
+        tot = 0;
+        nul = &_nul;
+        memset(nul, 0, sizeof(Node));
+        root = rend = createNode(-inf);
+        end = createNode(inf);
+        root->child[1] = end;
+        end->parent = root;
+    }
+    inline void maintain(Node* nod)
+    {
+        nod->rank = nod->count + nod->child[0]->rank + nod->child[1]->rank;
+    }
+    inline int branch(Node* nod)
     {
         return (int)(nod->parent->child[1] == nod);
     }
-    inline void _link(splay_tree_node *pa, splay_tree_node *nod, int b)
+    void rotate(Node* nod)
     {
-        if(pa)pa->child[b] = nod;
-        if(nod)nod->parent = pa;
+        Node *pa = nod->parent;
+        Node *gpa = pa->parent;
+        int b = branch(nod);
+        link(nod, gpa, branch(pa));
+        link(nod->child[b ^ 1], pa, b);
+        link(pa, nod, b ^ 1);
+        maintain(pa);
+        maintain(nod);
     }
-    void _rotate(splay_tree_node* nod)
+    void splay(Node *nod, Node *pa)
     {
-        if(nod == root)return;
-        splay_tree_node *pa = nod->parent;
-        splay_tree_node *gpa = pa->parent;
-        int b1 = _branch(nod), b2 = _branch(pa);
-        splay_tree_node *sub = nod->child[b1 ^ 1];
-        _link(gpa, nod, b2); _link(nod, pa, b1 ^ 1); _link(pa, sub, b1);
-        _update(nod); _update(pa);
-    }
-    void _splay(splay_tree_node *nod)
-    {
-        while(nod != root)
+        while(nod->parent != pa)
         {
-            splay_tree_node *pa = nod->parent;
-            if(_branch(pa) == _branch(nod))
-            {
-                _rotate(pa); _rotate(nod);
-            }
+            Node *pnod = nod->parent;
+            if(pnod->parent != pa)
+                rotate(branch(nod) == branch(pnod) ? pnod : nod);
+            rotate(nod);
+        }
+    }
+    Node* findpos(T val, Node *tree)
+    {
+        Node *nod = tree;
+        while(nod != nul)
+        {
+            if(val < nod->value && nod->child[0] != nul)nod = nod->child[0];
+            else if(val > nod->value && nod->child[1] != nul)nod = nod->child[1];
+            else break;
+        }
+        return nod;
+    }
+    Node* find(T val)
+    {
+        Node *nod = findpos(val, root);
+        splay(nod, nul);
+        root = nod;
+        return nod->value == val ? nod : NULL;
+    }
+    void insert(T val)
+    {
+        Node *nod = findpos(val, root);
+        if(nod->value == val)nod->count++, root = nod;
+        else link(root = createNode(val), nod, (int)(val > nod->value));
+        splay(root, nul);
+    }
+    Node* remove(T val)
+    {
+        Node *pre = prevOf(val);
+        Node *nxt = nextOf(val);
+        splay(pre, nul);
+        splay(nxt, pre);
+        Node *nod = nxt->child[0];
+        nod->count--, nod->rank--;
+        if(nod->count == 0)nxt->child[0] = nul;
+        maintain(nxt);
+        maintain(pre);
+        root = pre;
+        return nod;
+    }
+    Node* removeRange(T lbound, T rbound)
+    {
+        Node *pre = prevOf(lbound);
+        Node *nxt = nextOf(rbound);
+        splay(pre, nul);
+        splay(nxt, pre);
+        Node *nod = nxt->child[0];
+        nxt->child[0] = nul;
+        maintain(nxt);
+        maintain(pre);
+        root = pre;
+        return nod;
+    }
+    Node* prevOf(T val)
+    {
+        find(val);
+        if(root->value < val)return root;
+        return findpos(val, root->child[0]);
+    }
+    Node* nextOf(T val)
+    {
+        find(val);
+        if(root->value > val)return root;
+        return findpos(val, root->child[1]);
+    }
+    int orderOf(T val)
+    {
+        find(val);
+        if(root->value >= val)return root->child[0]->rank;
+        return root->child[0]->rank + root->count;
+    }
+    Node* findByOrder(int ord)
+    {
+        ord++;
+        Node *nod = root;
+        while(nod != nul)
+        {
+            if(nod->child[0]->rank >= ord)
+                nod = nod->child[0];
+            else if(nod->child[0]->rank + nod->count >= ord)
+                break;
             else
             {
-                _rotate(nod); _rotate(nod);
+                ord -= nod->child[0]->rank + nod->count;
+                nod = nod->child[1];
             }
         }
-    }
-
-    splay_tree_node* find(int val)
-    {
-        splay_tree_node *nod = root;
-        while(nod)
-        {
-            if(nod->value == val)break;
-            int b = (int)(val > nod->value);
-            nod = nod->child[b];
-        }
-        if(nod)_splay(nod);
         return nod;
-    }
-    void insert(int val)
-    {
-        if(!root)
-        {
-            root = &nodes[tot++];
-            *root = (splay_tree_node){val, 1, 1, NULL, NULL, NULL};
-            return;
-        }
-        splay_tree_node *nod = root;
-        while(true)
-        {
-            nod->rank++;
-            if(nod->value == val)
-            {
-                nod->count++;
-                break;
-            }
-            int b = (int)(val > nod->value);
-            if(!nod->child[b])
-            {
-                nod->child[b] = &nodes[tot++];
-                *nod->child[b] = (splay_tree_node){val, 1, 1, nod, NULL, NULL};
-                nod = nod->child[b];
-                break;
-            }
-            nod = nod->child[b];
-        }
-        _splay(nod);
-    }
-    splay_tree_node* get_prev(int val)
-    {
-        if(!root)return NULL;
-        _splay(find(val));
-        splay_tree_node *nod = root->child[1];
-        while(nod->child[0])nod = nod->child[0];
-        return nod;
-    }
-    splay_tree_node* get_next(int val)
-    {
-        if(!root)return NULL;
-        _splay(find(val));
-        splay_tree_node *nod = root->child[0];
-        while(nod->child[1])nod = nod->child[1];
-        return nod;
-    }
-    int get_rank(int val)
-    {
-        _splay(find(val));
-        if(root->child[0])return root->child[0]->rank + 1;
-        else return 1;
-    }
-    splay_tree_node* get_kth(int k)
-    {
-        splay_tree_node *nod = root;
-        
     }
 };
 
-
-
+SplayTree<int, 100010> Tree;
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    
+    Tree.init();
+    int n; readi(n);
+    rep(i,1,n)
+    {
+        int op, k; readi(op, k);
+        switch(op)
+        {
+            case 1:
+            Tree.insert(k);
+            break;
+            case 2:
+            Tree.remove(k);
+            break;
+            case 3:
+            printf("%d\n", Tree.orderOf(k));
+            break;
+            case 4:
+            printf("%d\n", Tree.findByOrder(k)->value);
+            break;
+            case 5:
+            printf("%d\n", Tree.prevOf(k)->value);
+            break;
+            case 6:
+            printf("%d\n", Tree.nextOf(k)->value);
+            break;
+        }
+    }
     return 0;
 }

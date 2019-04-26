@@ -1,3 +1,10 @@
+/**
+* Number:scu2800
+* Title:三角形
+* Status:WA
+* Tag:[dp]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
