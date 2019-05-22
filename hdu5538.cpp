@@ -1,3 +1,10 @@
+/**
+* Number:hdu5538
+* Title:House Building
+* Status:WA
+* Tag:[模拟]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -24,12 +31,45 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
+int dir[][2]={{1,0},{-1,0},{0,1},{0,-1}};
+int maze[60][60];
+int vis[60][60];
+int calc(int x,int y,int i)
+{
+    int h=maze[x][y];
+    int h1=vis[x+dir[i][0]][y+dir[i][1]];
+    vis[x+dir[i][0]][y+dir[i][1]]=max(h,h1);
+    if(h1==0)return h;
+    if(h1+1>=h)return 0;
+    return h-h1-1;
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    
+    int T; readi(T);
+    while(T--)
+    {
+        mset(maze,0);
+        mset(vis,0);
+        int n,m; readi(n,m);
+        rep2(i,1,n,j,1,m)
+        {
+            readi(maze[i][j]);
+            vis[i][j]=maze[i][j];
+        }
+        int ans=0;
+        rep2(i,1,n,j,1,m)
+        {
+            if(maze[i][j])
+            {
+                repne(k,0,4)ans+=calc(i,j,k);
+                ans+=2;
+            }
+        }
+        printf("%d\n",ans);
+    }
     return 0;
 }

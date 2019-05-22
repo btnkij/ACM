@@ -1,3 +1,10 @@
+/**
+* Number:hdu5527
+* Title:Too Rich
+* Status:AC
+* Tag:[贪心, dfs]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -8,7 +15,7 @@
 #include <stack>
 using namespace std;
 
-#define INF 0x3f3f3f3f
+#define INF 0x3f3f3f3f3f3f3f3f
 #define PI acos(-1)
 typedef long long ll;
 typedef unsigned long long ull;
@@ -24,17 +31,18 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int dir[][2]={{1,0},{-1,0},{0,1},{0,-1}};
-int maze[60][60];
-int vis[60][60];
-int calc(int x,int y,int i)
+ll c[]={0,1,5,10,20,50,100,200,500,1000,2000};
+ll num[12];
+ll dfs(ll tot, int k)
 {
-    int h=maze[x][y];
-    int h1=vis[x+dir[i][0]][y+dir[i][1]];
-    vis[x+dir[i][0]][y+dir[i][1]]=max(h,h1);
-    if(h1==0)return h;
-    if(h1+1>=h)return 0;
-    return h-h1-1;
+    if(tot==0)return 0;
+    if(k==0)return INF;
+    if(num[k]==0)
+        return dfs(tot,k-1);
+    ll x=min(num[k], tot/c[k]);
+    ll ans=x+dfs(tot-x*c[k], k-1);
+    if(x>=1)ans=min(ans, x-1+dfs(tot-(x-1)*c[k], k-1));
+    return ans;
 }
 int main()
 {
@@ -45,24 +53,23 @@ int main()
     int T; readi(T);
     while(T--)
     {
-        mset(maze,0);
-        mset(vis,0);
-        int n,m; readi(n,m);
-        rep2(i,1,n,j,1,m)
+        ll p; scanf("%lld",&p);
+        ll tot=0,n=0;
+        rep(i,1,10)
         {
-            readi(maze[i][j]);
-            vis[i][j]=maze[i][j];
+            scanf("%lld",num+i);
+            tot+=c[i]*num[i];
+            n+=num[i];
         }
-        int ans=0;
-        rep2(i,1,n,j,1,m)
+        tot=tot-p;
+        if(tot<0)
         {
-            if(maze[i][j])
-            {
-                repne(k,0,4)ans+=calc(i,j,k);
-                ans+=2;
-            }
+            printf("-1\n");
+            continue;
         }
-        printf("%d\n",ans);
+        ll ans=dfs(tot,10);
+        if(ans>n)printf("-1\n");
+        else printf("%lld\n",n-ans);
     }
     return 0;
 }
