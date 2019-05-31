@@ -82,3 +82,57 @@ struct spfa
         return true; // 求出最短路
     }
 };
+
+/**
+ * 
+ * SPFA dfs优化 判负环
+ * 
+**/
+#include <algorithm>
+
+struct Edge
+{
+    int from,to;
+    int dis;
+}edges[6000];
+int head[510], nxt[6000], tot;
+void addEdge(int from, int to, int dis)
+{
+    Edge& e=edges[tot];
+    e.from=from, e.to=to, e.dis=dis;
+    nxt[tot]=head[from];
+    head[from]=tot++;
+}
+
+int dis[510];
+bool vis[510];
+bool spfa(int u)
+{
+    vis[u]=true;
+    bool ans=false;
+    for(int i=head[u];~i;i=nxt[i])
+    {
+        int v=edges[i].to;
+        int c=edges[i].dis;
+        if(dis[u]+c<dis[v])
+        {
+            dis[v]=dis[u]+c;
+            if(vis[v] || spfa(v))
+            {
+                ans=true;
+                break;
+            }
+        }
+    }
+    vis[u]=false;
+    return ans;
+}
+
+int n; // 节点数
+bool check()
+{
+    std::fill(vis, vis+n+1, false);
+    std::fill(dis, dis+n+1, 0);
+    for(int i=1;i<=n;i++)if(spfa(i))return true;
+    return false;
+}

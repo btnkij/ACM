@@ -1,3 +1,10 @@
+/**
+* Number:loj10076
+* Title:「一本通 3.2 练习 2」Roadblocks
+* Status:AC
+* Tag:[dijkstra]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -26,94 +33,64 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 
 struct Edge
 {
-    int from,to,dis;
-}edges[100010*2];
-int head[50010],nxt[100010*2],ne;
-void add_edge(int from,int to,int dis)
+    int from,to;
+    int dist;
+}edges[200010];
+int head[5010],nxt[200010],tot;
+void add_edge(int from, int to, int dist)
 {
-    Edge& e=edges[ne];
-    e.from=from, e.to=to, e.dis=dis;
-    nxt[ne]=head[from];
-    head[from]=ne++;
+    Edge& e=edges[tot];
+    e.from=from, e.to=to, e.dist=dist;
+    nxt[tot]=head[from];
+    head[from]=tot++;
 }
 
-int dis[50010];
-bool vis[50010];
 struct Node
 {
-    int u,cost;
+    int pos;
+    int cost;
     bool operator<(const Node& rhs)const
     {
         return cost > rhs.cost;
     }
 };
-void dijkstra(int src)
+
+int dis[5010][2];
+void dijkstra(int src, int dst)
 {
-    mset(vis,false);
-    priority_queue<Node> Q;
-    Q.push((Node){src,0});
+    mset(dis, INF);
+    std::priority_queue<Node> Q;
+    Q.push((Node){src, 0});
     while(!Q.empty())
     {
         Node node=Q.top(); Q.pop();
-        if(vis[node.u])continue;
-        vis[node.u]=true;
-        dis[node.u]=node.cost;
-        for(int i=head[node.u];~i;i=nxt[i])
+        int u=node.pos, c=node.cost;
+        if(c>=dis[u][1])continue;
+        if(dis[u][0]==INF)dis[u][0]=c;
+        else if(c!=dis[u][0]) dis[u][1]=c;
+        for(int i=head[node.pos]; ~i; i=nxt[i])
         {
             Edge& e=edges[i];
-            if(vis[e.to])continue;
-            Q.push((Node){e.to, node.cost+e.dis});
+            if(c+e.dist>=dis[e.to][1])continue;
+            Q.push((Node){e.to, node.cost+e.dist});
         }
     }
 }
 
-int adj[10][10];
-int pos[10];
-bool vis2[10];
-int ans;
-void dfs(int u,int cost)
-{
-    vis2[u]=true;
-    bool flag=true;;
-    rep(i,1,5)
-    {
-        if(vis2[i])continue;
-        flag=false;
-        dfs(i,cost+adj[u][i]);
-    }
-    if(flag)
-    {
-        ans=min(ans,cost);
-    }
-    vis2[u]=false;
-}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
-    rep(i,1,n)head[i]=-1;
-    pos[0]=1;
-    rep(i,1,5)readi(pos[i]);
-    repne(i,0,m)
+    int n,r; readi(n,r);
+    fill(head+1, head+n+1, -1);
+    while(r--)
     {
-        int u,v,w;
-        readi(u,v,w);
+        int u,v,w; readi(u,v,w);
         add_edge(u,v,w); add_edge(v,u,w);
     }
-    rep(i,1,5)
-    {
-        dijkstra(pos[i]);
-        adj[0][i]=adj[i][0]=dis[1];
-        rep(j,1,5)
-        {
-            adj[i][j]=adj[j][i]=dis[pos[j]];
-        }
-    }
-    ans=INF;
-    dfs(0,0);
-    printf("%d",ans);
+    dijkstra(1,n);
+    printf("%d", dis[n][1]);
     return 0;
 }
