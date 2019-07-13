@@ -1,0 +1,98 @@
+/**
+* Number:loj10098
+* Title:「一本通 3.6 例 1」分离的路径
+* Status:AC
+* Tag:[tarjan, 割边]
+**/
+
+#include <cstdio>
+#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <vector>
+#include <queue>
+#include <stack>
+using namespace std;
+
+#define INF 0x3f3f3f3f
+#define PI acos(-1)
+typedef long long ll;
+typedef unsigned long long ull;
+
+inline int readi(int& i1) { return scanf("%d", &i1); }
+inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int& i1, int& i2, int& i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int& i1, int& i2, int& i3, int& i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char* s1) { return scanf("%s", s1); }
+#define mset(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
+#define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
+#define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
+
+struct Edge
+{
+    int from,to,nxt;
+}edges[20010];
+int head[5010],edge_id;
+void addedge(int from,int to)
+{
+    edges[edge_id]=(Edge){from,to,head[from]};
+    head[from]=edge_id++;
+}
+
+stack<int> trace;
+int dfn[5010],low[5010],dfs_id;
+int grp[5010],grp_id;
+void tarjan(int u,int pre)
+{
+    trace.push(u);
+    dfn[u]=low[u]=++dfs_id;
+    for(int i=head[u];~i;i=edges[i].nxt)
+    {
+        if((i^1)==pre)continue;
+        int v=edges[i].to;
+        if(!dfn[v])tarjan(v,i);
+        low[u]=min(low[u],low[v]);
+    }
+    if(low[u]==dfn[u])
+    {
+        ++grp_id;
+        int top;
+        do
+        {
+            top=trace.top(); trace.pop();
+            grp[top]=grp_id;
+        }while(top!=u);
+    }
+}
+
+int deg[5010];
+int main()
+{
+#ifdef __DEBUG__
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
+#endif
+    int n,m; readi(n,m);
+    fill_n(head+1,n,-1);
+    repne(i,0,m)
+    {
+        int u,v; readi(u,v);
+        addedge(u,v); addedge(v,u);
+    }
+    tarjan(1,-1);
+    rep(u,1,n)
+    {
+        for(int i=head[u];~i;i=edges[i].nxt)
+        {
+            int v=edges[i].to;
+            if(grp[u]==grp[v])continue;
+            deg[grp[v]]++;
+        }
+    }
+    int ans=count_if(deg+1,deg+grp_id+1,[](int x){return x==1;});
+    printf("%d",(ans+1)>>1);
+    return 0;
+}

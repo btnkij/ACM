@@ -76,11 +76,6 @@ void solve(int cur)
             }
         }
     }
-    // for(auto it:v)
-    // {
-    //     printf("(%lld %c) ",it.pos,it.pos);
-    // }
-    // printf("\n");
 }
 int main()
 {
