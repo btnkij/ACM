@@ -50,18 +50,18 @@ struct kmp
 
 struct extend_kmp
 {
-    int nxt[1000010] /* 最长前缀 */, ext[1000010];
+    int nxt[100010] /* 最长前缀 */, ext[100010];
     void init_nxt(const char* pat)
     {
         int p = 0, mx = 0, i;
         for(i = 1; pat[i]; i++)
-        {      
+        {
             int k = i > mx ? i : i + nxt[i - p] - 1;
             if(k < mx)nxt[i] = nxt[i - p];
             else
             {
                 k = mx + 1;
-                int j = i > mx ? 0 : k - p;
+                int j = i > mx ? 0 : k - i;
                 while(pat[k] && pat[k] == pat[j])k++, j++;
                 p = i;
                 mx = std::max(p, k - 1);
