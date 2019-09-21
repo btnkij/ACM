@@ -1,8 +1,8 @@
 /**
 * Number:p5306
 * Title:[COCI2019] Transport
-* Status:?
-* Tag:[]
+* Status:AC
+* Tag:[点分治]
 **/
 
 #include <cstdio>
@@ -69,24 +69,24 @@ int len1,len2;
 void dfs1(int u,int pre,ll sum,ll mmin)
 {
     fro[len1++]=mmin;
+    sum+=a[u];
     for(int i=head[u];~i;i=edges[i].nxt)
     {
         int v=edges[i].to;
         if(cg[v] || v==pre)continue;
         ll w=edges[i].dis;
-        dfs1(v,u,sum+a[u]-w,min(mmin,sum+a[u]-w));
+        dfs1(v,u,sum-w,min(mmin,sum-w));
     }
 }
-void dfs2(int u,int pre,ll sum)
+void dfs2(int u,int pre,ll sum,ll mmin)
 {
-    sum+=a[u];
-    if(sum>=0)bac[len2++]=sum;
+    if(mmin>=0)bac[len2++]=sum;
     for(int i=head[u];~i;i=edges[i].nxt)
     {
         int v=edges[i].to;
         if(cg[v] || v==pre)continue;
         ll w=edges[i].dis;
-        dfs2(v,u,sum-w);
+        dfs2(v,u,a[v]-w+sum,min(a[v]-w,a[v]-w+mmin));
     }
 }
 void solve(int src,int n)
@@ -103,7 +103,7 @@ void solve(int src,int n)
         ll w=edges[i].dis;
         if(cg[v])continue;
         dfs1(v,u,a[u]-w,a[u]-w);
-        dfs2(v,u,-w);
+        dfs2(v,u,a[v]-w,a[v]-w);
         sort(fro+st1,fro+len1);
         sort(bac+st2,bac+len2);
         int l=st1,r=len2-1;
@@ -130,7 +130,7 @@ void solve(int src,int n)
     {
         int v=edges[i].to;
         if(cg[v])continue;
-        solve(v,rk[v]>rk[u] ? n-rk[u] : rk[v]);
+        solve(v,rk[v]>=rk[u] ? n-rk[u] : rk[v]);
     }
 }
 int main()

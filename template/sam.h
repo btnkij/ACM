@@ -15,15 +15,13 @@ struct SAM
     }
     struct State
     {
-        int length, parent;
-        int nxt[26];
+        int length, parent, nxt[26];
     }dfa[MAXN];
     int size, last;
     void init()
     {
-        size = 1;
-        last = 0;
-        dfa[0].length = 0;
+        size = 1, last = 0;
+        // memset(&dfa[0], 0, sizeof(State));
         dfa[0].parent = -1;
     }
     void append(char ch)
