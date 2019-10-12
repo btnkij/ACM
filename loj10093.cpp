@@ -1,8 +1,8 @@
 /**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
+* Number:loj10093
+* Title:「一本通 3.5 练习 1」网络协议
 * Status:AC
-* Tag:[tarjan, 缩点]
+* Tag:[tarjan]
 **/
 
 #include <cstdio>
@@ -30,12 +30,11 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
+const int MAXN=110;
 struct Edge
 {
     int from,to,nxt;
-}edges[MAXM];
+}edges[MAXN*MAXN];
 int head[MAXN],edgeid;
 void addedge(int from,int to)
 {
@@ -43,17 +42,17 @@ void addedge(int from,int to)
     head[from]=edgeid++;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
+int dfsid,dfn[MAXN],low[MAXN];
+int grpid,grp[MAXN];
 stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
-void tarjan(int u)
+void scc(int u)
 {
     dfn[u]=low[u]=++dfsid;
     trace.push(u);
     for(int i=head[u];~i;i=edges[i].nxt)
     {
         int v=edges[i].to;
-        if(!dfn[v])tarjan(v);
+        if(!dfn[v])scc(v);
         if(!grp[v])low[u]=min(low[u],low[v]);
     }
     if(dfn[u]==low[u])
@@ -63,43 +62,40 @@ void tarjan(int u)
         do
         {
             t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
+            grp[t]=grpid;
+        }while(t!=u);
     }
 }
 
-int outdeg[MAXN];
+int indeg[MAXN],outdeg[MAXN];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
     clr(head,-1);
-    repne(i,0,m)
+    int n; readi(n);
+    rep(u,1,n)
     {
-        int u,v; readi(u,v);
-        addedge(u,v);
+        int v;
+        while(readi(v)!=EOF && v)addedge(u,v);
     }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
+    rep(u,1,n)if(!dfn[u])scc(u);
+    if(grpid==1)
     {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
+        printf("1\n0");
+        return 0;
     }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
+    repne(i,0,edgeid)
     {
-        if(outdeg[i]==0)
-        {
-            ans+=rk[i];
-            cnt++;
-        }
+        int u=edges[i].from, v=edges[i].to;
+        if(grp[u]==grp[v])continue;
+        outdeg[grp[u]]++, indeg[grp[v]]++;
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
+    auto iszero=[](int x){return int(x==0);};
+    int cntin=count_if(indeg+1,indeg+grpid+1,iszero);
+    int cntout=count_if(outdeg+1,outdeg+grpid+1,iszero);
+    printf("%d\n%d",cntin,max(cntin,cntout));
     return 0;
 }

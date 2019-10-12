@@ -1,8 +1,8 @@
 /**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
+* Number:loj10095
+* Title:「一本通 3.5 练习 3」间谍网络
 * Status:AC
-* Tag:[tarjan, 缩点]
+* Tag:[tarjan]
 **/
 
 #include <cstdio>
@@ -30,8 +30,8 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
+const int MAXN=3010;
+const int MAXM=8010;
 struct Edge
 {
     int from,to,nxt;
@@ -43,63 +43,69 @@ void addedge(int from,int to)
     head[from]=edgeid++;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
+int cost[MAXN],sccCost[MAXN];
+int dfsid,dfn[MAXN],low[MAXN];
+int grpid,grp[MAXN];
 stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
-void tarjan(int u)
+void scc(int u)
 {
     dfn[u]=low[u]=++dfsid;
     trace.push(u);
     for(int i=head[u];~i;i=edges[i].nxt)
     {
         int v=edges[i].to;
-        if(!dfn[v])tarjan(v);
+        if(!dfn[v])scc(v);
         if(!grp[v])low[u]=min(low[u],low[v]);
     }
-    if(dfn[u]==low[u])
+    if(low[u]==dfn[u])
     {
-        int t;
         ++grpid;
+        int t,tmp=INF;
         do
         {
             t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
+            grp[t]=grpid;
+            tmp=min(tmp,cost[t]);
+        }while(t!=u);
+        sccCost[grpid]=tmp;
     }
 }
 
-int outdeg[MAXN];
+int indeg[MAXN];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
+    int n,p; readi(n,p);
+    clr(cost,INF);
+    while(p--)
+    {
+        int u,c; readi(u,c);
+        cost[u]=c;
+    }
+    int r; readi(r);
     clr(head,-1);
-    repne(i,0,m)
+    repne(i,0,r)
     {
         int u,v; readi(u,v);
         addedge(u,v);
     }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
+    rep(i,1,n)if(!dfn[i] && cost[i]!=INF)scc(i);
+    rep(i,1,n)if(!dfn[i])
     {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
+        printf("NO\n%d",i);
+        return 0;
     }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
+    repne(i,0,r)
     {
-        if(outdeg[i]==0)
-        {
-            ans+=rk[i];
-            cnt++;
-        }
+        int u=edges[i].from,v=edges[i].to;
+        if(grp[u]==grp[v])continue;
+        indeg[grp[v]]++;
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
+    int ans=0;
+    rep(i,1,grpid)if(indeg[i]==0)ans+=sccCost[i];
+    printf("YES\n%d",ans);
     return 0;
 }

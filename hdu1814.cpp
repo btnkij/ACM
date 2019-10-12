@@ -1,8 +1,8 @@
 /**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
+* Number:hdu1814
+* Title:Peaceful Commission
 * Status:AC
-* Tag:[tarjan, 缩点]
+* Tag:[2-sat, dfs]
 **/
 
 #include <cstdio>
@@ -30,8 +30,8 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
+const int MAXN=8010*2;
+const int MAXM=20010*2;
 struct Edge
 {
     int from,to,nxt;
@@ -43,63 +43,65 @@ void addedge(int from,int to)
     head[from]=edgeid++;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
-stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
-void tarjan(int u)
+vector<int> trace;
+bool mark[MAXN];
+bool dfs(int u)
 {
-    dfn[u]=low[u]=++dfsid;
-    trace.push(u);
+    if(mark[u])return true;
+    if(mark[u^1])return false;
+    mark[u]=true,mark[u^1]=false;
+    trace.push_back(u);
     for(int i=head[u];~i;i=edges[i].nxt)
     {
         int v=edges[i].to;
-        if(!dfn[v])tarjan(v);
-        if(!grp[v])low[u]=min(low[u],low[v]);
+        if(!dfs(v))return false;
     }
-    if(dfn[u]==low[u])
+    return true;
+}
+bool solve(int n)
+{
+    clr(mark,false);
+    repne(i,0,n<<1)
     {
-        int t;
-        ++grpid;
-        do
-        {
-            t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
+        if(mark[i] || mark[i^1])continue;
+        trace.clear();
+        if(dfs(i))continue;
+        for(int j:trace)mark[j]=false;
+        trace.clear();
+        if(!dfs(i^1))return false;
     }
+    return true;
 }
 
-int outdeg[MAXN];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
-    clr(head,-1);
-    repne(i,0,m)
+    int n,m;
+    while(readi(n,m)!=EOF)
     {
-        int u,v; readi(u,v);
-        addedge(u,v);
-    }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
-    {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
-    }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
-    {
-        if(outdeg[i]==0)
+        clr(head,-1);
+        edgeid=0;
+        repne(i,0,m)
         {
-            ans+=rk[i];
-            cnt++;
+            int a,b; readi(a,b);
+            a--, b--;
+            addedge(a,b^1);
+            addedge(b,a^1);
+        }
+        if(!solve(n))puts("NIE");
+        else
+        {
+            repne(i,0,n<<1)
+            {
+                if(mark[i])
+                {
+                    printf("%d\n",i+1);
+                }
+            }
         }
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
     return 0;
 }

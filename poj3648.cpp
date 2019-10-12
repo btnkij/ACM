@@ -1,8 +1,8 @@
 /**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
+* Number:poj3648
+* Title:Wedding
 * Status:AC
-* Tag:[tarjan, 缩点]
+* Tag:[2-sat, tarjan]
 **/
 
 #include <cstdio>
@@ -30,8 +30,9 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
+const int MAXN=110*2;
+const int MAXM=MAXN*MAXN;
+
 struct Edge
 {
     int from,to,nxt;
@@ -43,9 +44,9 @@ void addedge(int from,int to)
     head[from]=edgeid++;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
+int dfsid,dfn[MAXN],low[MAXN];
+int grpid,grp[MAXN];
 stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
 void tarjan(int u)
 {
     dfn[u]=low[u]=++dfsid;
@@ -58,48 +59,55 @@ void tarjan(int u)
     }
     if(dfn[u]==low[u])
     {
-        int t;
-        ++grpid;
-        do
-        {
-            t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
+        grp[u]=++grpid;
+        while(trace.top()!=u)grp[trace.top()]=grpid,trace.pop();
+        trace.pop();
     }
 }
 
-int outdeg[MAXN];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
-    clr(head,-1);
-    repne(i,0,m)
+    int n,m;
+    while(readi(n,m)!=EOF && (n|m))
     {
-        int u,v; readi(u,v);
-        addedge(u,v);
-    }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
-    {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
-    }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
-    {
-        if(outdeg[i]==0)
+        clr(head,-1); edgeid=0;
+        addedge(0,1);
+        repne(i,0,m)
         {
-            ans+=rk[i];
-            cnt++;
+            int u,v; char u1,v1;
+            scanf("%d%c %d%c",&u,&u1,&v,&v1);
+            u=u1=='w'?u<<1:u<<1|1;
+            v=v1=='w'?v<<1:v<<1|1;
+            addedge(u,v^1);
+            addedge(v,u^1);
+        }
+        clr(dfn,0); clr(grp,0); dfsid=grpid=0;
+        repne(i,0,n<<1)if(!dfn[i])tarjan(i);
+        bool ok=true;
+        for(int i=0;i<(n<<1);i+=2)
+        {
+            if(grp[i]==grp[i^1])
+            {
+                ok=false;
+                break;
+            }
+        }
+        if(!ok)puts("bad luck");
+        else
+        {
+            repne(i,2,n<<1)
+            {
+                if(grp[i]>grp[i^1])
+                {
+                    printf("%d%c ",i>>1,(i&1)==0?'w':'h');
+                }
+            }
+            puts("");
         }
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
     return 0;
 }

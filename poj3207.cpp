@@ -1,8 +1,8 @@
 /**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
+* Number:poj2307
+* Title:Ikki's Story IV - Panda's Trick
 * Status:AC
-* Tag:[tarjan, 缩点]
+* Tag:[2-sat, 并查集]
 **/
 
 #include <cstdio>
@@ -30,45 +30,21 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
-struct Edge
+int fa[1010];
+int findr(int x)
 {
-    int from,to,nxt;
-}edges[MAXM];
-int head[MAXN],edgeid;
-void addedge(int from,int to)
+    return x==fa[x]?x:fa[x]=findr(fa[x]);
+}
+void merge(int x,int y)
 {
-    edges[edgeid]=(Edge){from,to,head[from]};
-    head[from]=edgeid++;
+    int rx=findr(x),ry=findr(y);
+    if(rx!=ry)fa[rx]=ry;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
-stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
-void tarjan(int u)
+struct Node
 {
-    dfn[u]=low[u]=++dfsid;
-    trace.push(u);
-    for(int i=head[u];~i;i=edges[i].nxt)
-    {
-        int v=edges[i].to;
-        if(!dfn[v])tarjan(v);
-        if(!grp[v])low[u]=min(low[u],low[v]);
-    }
-    if(dfn[u]==low[u])
-    {
-        int t;
-        ++grpid;
-        do
-        {
-            t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
-    }
-}
-
-int outdeg[MAXN];
+    int a,b;
+}link[510];
 int main()
 {
 #ifdef __DEBUG__
@@ -76,30 +52,29 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     int n,m; readi(n,m);
-    clr(head,-1);
     repne(i,0,m)
     {
-        int u,v; readi(u,v);
-        addedge(u,v);
+        readi(link[i].a,link[i].b);
+        if(link[i].a>link[i].b)swap(link[i].a,link[i].b);
     }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
+    repne(i,0,m<<1)fa[i]=i;
+    repne2(i,0,m,j,0,i)
     {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
-    }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
-    {
-        if(outdeg[i]==0)
+        Node &u=link[i],&v=link[j];
+        if((u.a<v.a&&v.a<u.b)^(u.a<v.b&&v.b<u.b))
         {
-            ans+=rk[i];
-            cnt++;
+            merge(i<<1,j<<1|1);
+            merge(i<<1|1,j<<1);
         }
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
+    repne(i,0,m)
+    {
+        if(findr(i<<1)==findr(i<<1|1))
+        {
+            printf("the evil panda is lying again\n");
+            return 0;
+        }
+    }
+    printf("panda is telling the truth...\n");
     return 0;
 }

@@ -1,8 +1,8 @@
 /**
-* Number:loj10099
-* Title:「一本通 3.6 例 2」矿场搭建
-* Status:?
-* Tag:[]
+* Number:p1368
+* Title:工艺
+* Status:AC
+* Tag:[双指针]
 **/
 
 #include <cstdio>
@@ -30,14 +30,24 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-
-
+int num[600010];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    
+    int n; readi(n);
+    repne(i,0,n)readi(num[i]);
+    copy(num,num+n,num+n);
+    int i=0,j=1,k=0;
+    while(i<n && j<n && k<n)
+    {
+        if(num[i+k]==num[j+k])k++;
+        else if(num[i+k]<num[j+k])j=j+k+1, k=0;
+        else i=i+k+1, k=0;
+        if(i==j)j++;
+    }
+    repne(k,0,n)printf("%d ",num[i+k]);
     return 0;
 }

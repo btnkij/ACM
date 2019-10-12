@@ -1,6 +1,6 @@
 /**
-* Number:spoj1811
-* Title:Longest Common Substring
+* Number:poj3415
+* Title:Common Substrings
 * Status:AC
 * Tag:[后缀自动机, sam]
 **/
@@ -30,16 +30,21 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
+const int MAXN=1e5+10;
 struct Node
 {
-    int link,len,nxt[26];
+    int link,len,nxt[52];
 }sam[MAXN<<1];
-int sz=1,last=1;
+int sz,last;
+void init()
+{
+    sz=last=1;
+    memset(&sam[1],0,sizeof(Node));
+}
 void extend(int ch)
 {
-    int cur=++sz, pre=last;
-    memset(sam+cur,0,sizeof(Node));
+    int cur=++sz,pre=last;
+    memset(&sam[cur],0,sizeof(Node));
     sam[cur].len=sam[pre].len+1;
     while(pre && !sam[pre].nxt[ch])
     {
@@ -69,67 +74,65 @@ void extend(int ch)
 
 char s[MAXN];
 int bin[MAXN],ord[MAXN<<1];
-int dp[MAXN<<1],dpall[MAXN<<1];
+int rt[MAXN<<1],dp[MAXN<<1];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    while(T--)
+    int k;
+    while(readi(k)!=EOF && k)
     {
-        int n; readi(n);
         reads(s);
-        int L=strlen(s);
-        n--;
-        if(n==0)
+        int len=strlen(s);
+        init();
+        clr(rt,0);
+        repne(i,0,len)
         {
-            printf("%d\n",L);
-            continue;
+            s[i]=s[i]<='Z'?s[i]-'A':s[i]-'a'+26;
+            extend(s[i]);
+            rt[last]=1;
         }
-        sz=last=1;
-        memset(sam+1,0,sizeof(Node));
-        for(char* p=s;*p;p++)extend(*p-'a');
         clr(bin,0);
         rep(i,2,sz)bin[sam[i].len]++;
-        rep(i,1,L)bin[i]+=bin[i-1];
+        rep(i,1,len)bin[i]+=bin[i-1];
         rep(i,2,sz)ord[bin[sam[i].len]--]=i;
-        clr(dpall,INF);
-        while(n--)
+        for(int i=sz-1;i>=1;i--)
         {
-            reads(s);
-            clr(dp,0);
-            int cur=1,len=0;
-            for(char* p=s;*p;p++)
-            {
-                int ch=*p-'a';
-                if(sam[cur].nxt[ch])
-                {
-                    cur=sam[cur].nxt[ch];
-                    len++;
-                    dp[cur]=max(dp[cur],len);
-                    continue;
-                }
-                while(cur && !sam[cur].nxt[ch])
-                    cur=sam[cur].link;
-                if(cur==0)cur=1,len=0;
-                else
-                {
-                    len=sam[cur].len+1;
-                    cur=sam[cur].nxt[ch];
-                    dp[cur]=max(dp[cur],len);
-                }
-            }
-            for(int i=sz-1;i>=1;i--)
-            {
-                int u=ord[i];
-                if(dp[u])dp[sam[u].link]=sam[sam[u].link].len;
-            }
-            rep(i,2,sz)dpall[i]=min(dpall[i],dp[i]);
+            int u=ord[i];
+            rt[sam[u].link]+=rt[u];
         }
-        int ans=*max_element(dpall+2,dpall+sz+1);
-        printf("%d\n",ans);
+        reads(s);
+        len=strlen(s);
+        repne(i,0,len)s[i]=s[i]<='Z'?s[i]-'A':s[i]-'a'+26;
+        ll ans=0;
+        int p=1,lcs=0;
+        clr(dp,0);
+        repne(i,0,len)
+        {
+            int ch=s[i];
+            if(sam[p].nxt[ch])p=sam[p].nxt[ch],lcs++;
+            else
+            {
+                while(p && !sam[p].nxt[ch])p=sam[p].link;
+                if(!p)p=1,lcs=0;
+                else lcs=sam[p].len+1,p=sam[p].nxt[ch];
+            }
+            if(lcs>=k)
+            {
+                int pre=sam[p].link;
+                ans+=ll(lcs-max(k,sam[pre].len+1)+1)*rt[p];
+                if(sam[pre].len>=k)dp[pre]++;
+            }
+        }
+        for(int i=sz-1;i>=1;i--)
+        {
+            int u=ord[i],pre=sam[u].link;
+            ans+=ll(sam[u].len-max(k,sam[pre].len+1)+1)*dp[u]*rt[u];
+            if(sam[pre].len>=k)dp[pre]+=dp[u];
+        }
+        printf("%lld\n",ans);
     }
     return 0;
 }

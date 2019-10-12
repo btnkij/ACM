@@ -1,4 +1,4 @@
-/**
+./**
 * Number:loj10098
 * Title:「一本通 3.6 例 1」分离的路径
 * Status:AC
@@ -92,7 +92,7 @@ int main()
             deg[grp[v]]++;
         }
     }
-    int ans=count_if(deg+1,deg+grp_id+1,[](int x){return x==1;});
+    int ans=count(deg+1,deg+grp_id+1,1);
     printf("%d",(ans+1)>>1);
     return 0;
 }

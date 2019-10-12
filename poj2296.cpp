@@ -1,8 +1,8 @@
 /**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
+* Number:poj2296
+* Title:Map Labeler
 * Status:AC
-* Tag:[tarjan, 缩点]
+* Tag:[2-sat, tarjan, 二分]
 **/
 
 #include <cstdio>
@@ -30,8 +30,9 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
+const int MAXN=110*2;
+const int MAXM=MAXN*MAXN;
+
 struct Edge
 {
     int from,to,nxt;
@@ -43,9 +44,9 @@ void addedge(int from,int to)
     head[from]=edgeid++;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
+int dfsid,dfn[MAXN],low[MAXN];
+int grpid,grp[MAXN];
 stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
 void tarjan(int u)
 {
     dfn[u]=low[u]=++dfsid;
@@ -58,48 +59,74 @@ void tarjan(int u)
     }
     if(dfn[u]==low[u])
     {
-        int t;
-        ++grpid;
-        do
-        {
-            t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
+        grp[u]=++grpid;
+        while(trace.top()!=u)grp[trace.top()]=grpid,trace.pop();
+        trace.pop();
     }
 }
 
-int outdeg[MAXN];
+struct Point
+{
+    int x,y;
+}pos[110];
+bool check(int n,int mid)
+{
+    clr(head,-1); edgeid=0;
+    repne2(i,0,n,j,0,i)
+    {
+        if(abs(pos[i].x-pos[j].x)>=mid)continue;
+        if(abs(pos[i].y-pos[j].y)>=(mid<<1))continue;
+        int up=i,down=j;
+        if(pos[up].y<pos[down].y)swap(down,up);
+        if(pos[up].y==pos[down].y)
+        {
+            addedge(up<<1,down<<1|1);
+            addedge(up<<1|1,down<<1);
+            addedge(down<<1,up<<1|1);
+            addedge(down<<1|1,up<<1);
+        }
+        else if(pos[up].y-pos[down].y<mid)
+        {
+            addedge(up<<1|1,up<<1);
+            addedge(down<<1,down<<1|1);
+        }
+        else if(pos[up].y-pos[down].y<mid*2)
+        {
+            addedge(up<<1|1,down<<1|1);
+            addedge(down<<1,up<<1);
+        }
+    }
+    clr(dfn,0); clr(grp,0); dfsid=grpid=0;
+    repne(i,0,n<<1)if(!dfn[i])tarjan(i);
+    repne(i,0,n)
+    {
+        if(grp[i<<1]==grp[i<<1|1])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
-    clr(head,-1);
-    repne(i,0,m)
+    int T; readi(T);
+    while(T--)
     {
-        int u,v; readi(u,v);
-        addedge(u,v);
-    }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
-    {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
-    }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
-    {
-        if(outdeg[i]==0)
+        int n; readi(n);
+        repne(i,0,n)readi(pos[i].x,pos[i].y);
+        int lt=0,rt=10010;
+        while(lt<rt)
         {
-            ans+=rk[i];
-            cnt++;
+            int mid=(lt+rt+1)>>1;
+            if(!check(n,mid))rt=mid-1;
+            else lt=mid;
         }
+        printf("%d\n",lt);
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
     return 0;
 }

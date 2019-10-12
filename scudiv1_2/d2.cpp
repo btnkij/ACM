@@ -1,10 +1,3 @@
-/**
-* Number:loj10091
-* Title:「一本通 3.5 例 1」受欢迎的牛
-* Status:AC
-* Tag:[tarjan, 缩点]
-**/
-
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -15,7 +8,7 @@
 #include <stack>
 using namespace std;
 
-#define INF 0x3f3f3f3f
+#define INF 0x3f3f3f3f3f3f3f3fLL
 typedef long long ll;
 typedef unsigned long long ull;
 
@@ -30,76 +23,64 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e4+10;
-const int MAXM=5e4+10;
+const int MAXN=1e5+10;
 struct Edge
 {
     int from,to,nxt;
-}edges[MAXM];
-int head[MAXN],edgeid;
+}edges[MAXN<<1];
+int head[MAXN],tot;
 void addedge(int from,int to)
 {
-    edges[edgeid]=(Edge){from,to,head[from]};
-    head[from]=edgeid++;
+    edges[tot]=(Edge){from,to,head[from]};
+    head[from]=tot++;
 }
 
-int dfn[MAXN],low[MAXN],dfsid;
-stack<int> trace;
-int grpid,grp[MAXN],rk[MAXN];
-void tarjan(int u)
+int timer,pos[MAXN],sz[MAXN];
+void dfs(int u,int pre)
 {
-    dfn[u]=low[u]=++dfsid;
-    trace.push(u);
+    sz[u]=1;
     for(int i=head[u];~i;i=edges[i].nxt)
     {
         int v=edges[i].to;
-        if(!dfn[v])tarjan(v);
-        if(!grp[v])low[u]=min(low[u],low[v]);
+        if(v==pre)continue;
+        dfs(v,u);
+        sz[u]+=sz[v];
     }
-    if(dfn[u]==low[u])
-    {
-        int t;
-        ++grpid;
-        do
-        {
-            t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
-        } while (t!=u);
-    }
+    pos[++timer]=u;
 }
 
-int outdeg[MAXN];
+ll dp[MAXN];
+ll a[MAXN],w[MAXN],v[MAXN];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi(n,m);
-    clr(head,-1);
-    repne(i,0,m)
+    int T; readi(T);
+    while(T--)
     {
-        int u,v; readi(u,v);
-        addedge(u,v);
-    }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    for(int i=0;i<edgeid;i++)
-    {
-        Edge& e=edges[i];
-        int u=grp[e.from],v=grp[e.to];
-        if(u==v)continue;
-        outdeg[u]++;
-    }
-    int ans=0,cnt=0;
-    rep(i,1,grpid)
-    {
-        if(outdeg[i]==0)
+        tot=0;
+        clr(head,-1);
+        int n,m; readi(n,m);
+        rep(i,1,n)scanf("%lld",w+i);
+        rep(i,1,n)scanf("%lld",v+i);
+        rep(i,1,n)a[i]=w[i]-v[i];
+        rep(i,1,m)
         {
-            ans+=rk[i];
-            cnt++;
+            int u,v; readi(u,v);
+            addedge(u,v); addedge(v,u);
         }
+        timer=0;
+        clr(pos,0);
+        rep(i,1,n)if(pos[i]==0)dfs(i,-1);
+        dp[0]=-INF;
+        for(int i=1;i<=n;i++)
+        {
+            int u=pos[i];
+            dp[i]=max(dp[i-1]+a[u],dp[i-sz[u]]);
+        }
+        printf("%lld\n",dp[n]);
     }
-    if(cnt==1)printf("%d",ans);
-    else printf("0");
     return 0;
 }

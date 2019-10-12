@@ -1,8 +1,8 @@
 /**
-* Number:
-* Title:
+* Number:spoj1812
+* Title:Longest Common Substring II
 * Status:?
-* Tag:[]
+* Tag:[后缀自动机, sam]
 **/
 
 #include <cstdio>
@@ -11,8 +11,6 @@
 #include <cmath>
 #include <cstring>
 #include <vector>
-#include <queue>
-#include <stack>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -30,10 +28,10 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=100000+10;
+const int MAXN=1e5+10;
 struct Node
 {
-    int pa,len,nxt[26];
+    int link,len,nxt[26];
 }sam[MAXN<<1];
 int sz=1,last=1;
 void extend(int ch)
@@ -43,23 +41,23 @@ void extend(int ch)
     while(pre && !sam[pre].nxt[ch])
     {
         sam[pre].nxt[ch]=cur;
-        pre=sam[pre].pa;
+        pre=sam[pre].link;
     }
-    if(!pre)sam[cur].pa=1;
+    if(!pre)sam[cur].link=1;
     else
     {
         int ori=sam[pre].nxt[ch];
-        if(sam[ori].len==sam[pre].len+1)sam[cur].pa=ori;
+        if(sam[ori].len==sam[pre].len+1)sam[cur].link=ori;
         else
         {
             int clone=++sz;
             sam[clone]=sam[ori];
             sam[clone].len=sam[pre].len+1;
-            sam[cur].pa=sam[ori].pa=clone;
+            sam[cur].link=sam[ori].link=clone;
             while(pre && sam[pre].nxt[ch]==ori)
             {
                 sam[pre].nxt[ch]=clone;
-                pre=sam[pre].pa;
+                pre=sam[pre].link;
             }
         }
     }
@@ -67,7 +65,8 @@ void extend(int ch)
 }
 
 char s[MAXN];
-int dp[MAXN],dpall[MAXN];
+int bin[MAXN],ord[MAXN<<1];
+int dp[MAXN<<1],dpall[MAXN<<1];
 int main()
 {
 #ifdef __DEBUG__
@@ -75,37 +74,44 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     reads(s);
-    int len=strlen(s);
-    repne(i,0,len)extend(s[i]-'a');
+    int L=strlen(s);
+    for(char* p=s;*p;p++)extend(*p-'a');
+    rep(i,2,sz)bin[sam[i].len]++;
+    rep(i,1,L)bin[i]+=bin[i-1];
+    rep(i,2,sz)ord[bin[sam[i].len]--]=i;
     clr(dpall,INF);
     while(reads(s)!=EOF)
     {
-        len=strlen(s);
         clr(dp,0);
-        int cur=1,tmp=0;
-        repne(j,0,len)
+        int cur=1,len=0;
+        for(char* p=s;*p;p++)
         {
-            int ch=s[j]-'a';
+            int ch=*p-'a';
             if(sam[cur].nxt[ch])
             {
                 cur=sam[cur].nxt[ch];
-                tmp++;
-                dp[cur]=max(dp[cur],tmp);
+                len++;
+                dp[cur]=max(dp[cur],len);
                 continue;
             }
             while(cur && !sam[cur].nxt[ch])
-                cur=sam[cur].pa;
-            if(!cur)tmp=0,cur=1;
+                cur=sam[cur].link;
+            if(cur==0)cur=1,len=0;
             else
             {
-                tmp=sam[cur].len+1;
+                len=sam[cur].len+1;
                 cur=sam[cur].nxt[ch];
-                dp[cur]=max(dp[cur],tmp);
+                dp[cur]=max(dp[cur],len);
             }
+        }
+        for(int i=sz-1;i>=1;i--)
+        {
+            int u=ord[i];
+            if(dp[u])dp[sam[u].link]=sam[sam[u].link].len;
         }
         rep(i,2,sz)dpall[i]=min(dpall[i],dp[i]);
     }
     int ans=*max_element(dpall+2,dpall+sz+1);
-    printf("%d\n",ans);
+    printf("%d",ans);
     return 0;
 }

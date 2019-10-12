@@ -1,8 +1,8 @@
 /**
-* Number:loj10099
-* Title:「一本通 3.6 例 2」矿场搭建
-* Status:?
-* Tag:[]
+* Number:uva719
+* Title:Glass Beads
+* Status:AC
+* Tag:[双指针]
 **/
 
 #include <cstdio>
@@ -30,14 +30,29 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-
-
+const int MAXN=1e5+10;
+char s[MAXN<<1];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    
+    int T; readi(T);
+    while(T--)
+    {
+        reads(s);
+        int len=strlen(s);
+        copy(s,s+len,s+len);
+        int i=0,j=1,k=0;
+        while(i<len && j<len && k<len)
+        {
+            if(s[i+k]==s[j+k])k++;
+            else if(s[i+k]<s[j+k])j=j+k+1,k=0;
+            else i=i+k+1,k=0;
+            if(i==j)j++;
+        }
+        printf("%d\n",min(i,j)+1);
+    }
     return 0;
 }

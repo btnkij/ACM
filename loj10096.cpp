@@ -1,8 +1,8 @@
 /**
-* Number:loj10092
-* Title:「一本通 3.5 例 2」最大半连通子图
+* Number:loj10096
+* Title:「一本通 3.5 练习 4」抢掠计划
 * Status:AC
-* Tag:[tarjan, dp]
+* Tag:[tarjan, 缩点, spfa, 最长路]
 **/
 
 #include <cstdio>
@@ -11,7 +11,7 @@
 #include <cmath>
 #include <cstring>
 #include <vector>
-#include <set>
+#include <queue>
 #include <stack>
 using namespace std;
 
@@ -30,16 +30,22 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e5+10;
-const int MAXM=1e6+10;
+const int MAXN=500010;
+const int MAXM=1000010;
 struct Edge
 {
     int from,to,nxt;
 };
-struct
+struct Graph
 {
     Edge edges[MAXM];
     int head[MAXN],edgeid;
+    int w[MAXN];
+    void init()
+    {
+        clr(head,-1);
+        edgeid=0;
+    }
     void addedge(int from,int to)
     {
         edges[edgeid]=(Edge){from,to,head[from]};
@@ -48,44 +54,54 @@ struct
 }G,DAG;
 
 int dfsid,dfn[MAXN],low[MAXN];
-int grpid,grp[MAXN],rk[MAXN];
+int grpid,grp[MAXN];
 stack<int> trace;
-void tarjan(int u)
+void scc(int u)
 {
     dfn[u]=low[u]=++dfsid;
     trace.push(u);
     for(int i=G.head[u];~i;i=G.edges[i].nxt)
     {
         int v=G.edges[i].to;
-        if(!dfn[v])tarjan(v);
+        if(!dfn[v])scc(v);
         if(!grp[v])low[u]=min(low[u],low[v]);
     }
-    if(dfn[u]==low[u])
+    if(low[u]==dfn[u])
     {
-        int t;
         ++grpid;
+        int t;
         do
         {
             t=trace.top(); trace.pop();
-            grp[t]=grpid, rk[grpid]++;
+            grp[t]=grpid;
+            DAG.w[grpid]+=G.w[t];
         }while(t!=u);
     }
 }
 
-int x;
-int dp[MAXN],cnt[MAXN];
-void dfs(int u)
+int dis[MAXN];
+bool vis[MAXN];
+int spfa(int src,int dst)
 {
-    if(dp[u]!=-1)return;
-    int ans1=0,ans2=1;
-    for(int i=DAG.head[u];~i;i=DAG.edges[i].nxt)
+    clr(dis,-1);
+    dis[src]=DAG.w[src];
+    queue<int> Q;
+    Q.push(src);
+    while(!Q.empty())
     {
-        int v=DAG.edges[i].to;
-        dfs(v);
-        if(ans1<dp[v])ans1=dp[v],ans2=cnt[v];
-        else if(ans1==dp[v])ans2=(ans2+cnt[v])%x;
+        int u=Q.front(); Q.pop();
+        vis[u]=false;
+        for(int i=DAG.head[u];~i;i=DAG.edges[i].nxt)
+        {
+            int v=DAG.edges[i].to;
+            if(dis[u]+DAG.w[v]>dis[v])
+            {
+                dis[v]=dis[u]+DAG.w[v];
+                if(!vis[v])Q.push(v),vis[v]=true;
+            }
+        }
     }
-    dp[u]=ans1+rk[u],cnt[u]=ans2;
+    return dis[dst];
 }
 int main()
 {
@@ -93,29 +109,32 @@ int main()
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    clr(G.head,-1);
-    int n,m; readi(n,m,x);
+    int n,m; readi(n,m);
+    G.init(), DAG.init();
     repne(i,0,m)
     {
         int u,v; readi(u,v);
         G.addedge(u,v);
     }
-    rep(i,1,n)if(!dfn[i])tarjan(i);
-    clr(DAG.head,-1);
-    set<pair<int,int> > S;
+    rep(i,1,n)readi(G.w[i]);
+    int src,dst;
+    int p; readi(src,p);
+    dst=n+1;
+    repne(i,0,p)
+    {
+        int t; readi(t);
+        G.addedge(t,dst);
+    }
+    scc(src);
     repne(i,0,G.edgeid)
     {
         Edge& e=G.edges[i];
         int u=grp[e.from],v=grp[e.to];
-        if(u==v || S.count(make_pair(u,v)))continue;
-        S.insert(make_pair(u,v));
+        if(u==v)continue;
         DAG.addedge(u,v);
     }
-    clr(dp,-1);
-    rep(i,1,grpid)dfs(i);
-    int ans1=*max_element(dp+1,dp+grpid+1);
-    int ans2=0;
-    rep(i,1,grpid)if(ans1==dp[i])ans2=(ans2+cnt[i])%x;
-    printf("%d\n%d",ans1,ans2);
+    src=grp[src],dst=grp[dst];
+    int ans=spfa(src,dst);
+    printf("%d",ans);
     return 0;
 }
