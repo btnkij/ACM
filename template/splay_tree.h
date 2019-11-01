@@ -7,13 +7,14 @@
 #include <cstring>
 
 template<typename T, int maxn, T inf = 0x7FFFFFFF>
+// 类型，最大节点数，正无穷大
 struct SplayTree
 {
     struct Node
     {
-        T value;
-        int count, rank;
-        Node *parent, *child[2];
+        T value; // 值
+        int count, rank; // 重复次数，排名
+        Node *parent, *child[2]; // 父节点，左右儿子
     }nodes[maxn];
     int tot;
     Node _nul, *nul;

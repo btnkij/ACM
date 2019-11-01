@@ -48,32 +48,22 @@ struct binary_indexed_tree_2d
     {
         this->maxr = maxr, this->maxc = maxc;
         for(int i = 0; i <= maxr; i++)
-        {
             memset(data[i], 0, sizeof(ll)*maxc);
-        }
     }
     // 原数组 arr[r][c] += delta
     void add(int r, int c, ll delta)
     {
         for(int i = r; i <= maxr; i += i & -i)
-        {
             for(int j = c; j <= maxc; j += j & -j)
-            {
                 data[i][j] += delta;
-            }
-        }
     }
     // 查询区间 [1, 1 : r, c] 的和
     ll query_sum(int r, int c)
     {
         ll sum = 0;
         for(int i = r; i; i ^= i & -i)
-        {
             for(int j = c; j; j ^= j & -j)
-            {
                 sum += data[i][j];
-            }
-        }
         return sum;
     }
 };

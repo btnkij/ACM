@@ -2,9 +2,117 @@
 * Number:uva1411
 * Title:Ants
 * Status:AC
+* Tag:[二分图, km, 最佳匹配, 完美匹配]
+**/
+
+#include <cstdio>
+#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <vector>
+#include <queue>
+#include <stack>
+using namespace std;
+
+#define INF 0x3f3f3f3f
+typedef long long ll;
+typedef unsigned long long ull;
+
+inline int readi(int& i1) { return scanf("%d", &i1); }
+inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int& i1, int& i2, int& i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int& i1, int& i2, int& i3, int& i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char* s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
+#define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
+#define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
+
+
+const double eps=1e-6;
+int n;
+double adj[110][110];
+int lef[110];
+bool visx[110],visy[110];
+double lx[110],ly[110];
+bool dfs(int u)
+{
+    visx[u]=true;
+    rep(v,1,n)
+    {
+        if(visy[v] || fabs(lx[u]+ly[v]-adj[u][v])>eps)continue;
+        visy[v]=true;
+        if(!lef[v] || dfs(lef[v]))
+        {
+            lef[v]=u;
+            return true;
+        }
+    }
+    return false;
+}
+int update()
+{
+    double delta=1e100;
+    rep(i,1,n)if(visx[i])
+        rep(j,1,n)if(!visy[j])
+            delta=min(delta,lx[i]+ly[j]-adj[i][j]);
+    rep(i,1,n)
+    {
+        if(visx[i])lx[i]-=delta;
+        if(visy[i])ly[i]+=delta;
+    }
+}
+void km()
+{
+    clr(lef,0); clr(ly,0);
+    rep(i,1,n)lx[i]=*max_element(adj[i]+1,adj[i]+n+1);
+    rep(i,1,n)
+    {
+        while(true)
+        {
+            clr(visx,false); clr(visy,false);
+            if(dfs(i))break;
+            update();
+        }
+    }
+}
+
+struct Point
+{
+    int x,y;
+}pos1[110],pos2[110];
+int main()
+{
+#ifdef __DEBUG__
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
+#endif
+    while(readi(n)!=EOF)
+    {
+        rep(i,1,n)readi(pos1[i].x,pos1[i].y);
+        rep(i,1,n)readi(pos2[i].x,pos2[i].y);
+        rep2(i,1,n,j,1,n)
+        {
+            Point &p1=pos1[i],&p2=pos2[j];
+            adj[j][i]=-sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2));
+        }
+        km();
+        rep(i,1,n)printf("%d\n",lef[i]);
+    }
+    return 0;
+}
+
+
+/**
+* Number:uva1411
+* Title:Ants
+* Status:AC
 * Tag:[分治]
 **/
 
+/*
 #include <cstdio>
 #include <iostream>
 #include <algorithm>
@@ -73,6 +181,10 @@ void solve(int left, int right)
 }
 int main()
 {
+#ifdef __DEBUG__
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
+#endif
     bool first = true;
     int n;
     while (scanf("%d", &n) != EOF)
@@ -102,3 +214,4 @@ int main()
     }
     return 0;
 }
+*/

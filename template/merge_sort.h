@@ -6,9 +6,9 @@
 
 #include <algorithm>
 
-int buffer[100010];
-void merge_sort(int* begin, int* end)
+void merge_sort(int *begin, int *end) // 传首尾指针，左闭右开区间
 {
+    static int buffer[100010]; // 保证长度大于待排序的数组
     int L = end - begin;
     if(L <= 1)return;
     int* mid = begin + (L >> 1);

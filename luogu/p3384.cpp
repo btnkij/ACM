@@ -1,8 +1,9 @@
 /**
-* Number:p3384
+* Number:luogu3384
 * Title:树链剖分
-* Status:?
+* Status:AC
 * Tag:[树链剖分]
+* desc: 树链剖分模板题
 **/
 
 #include <cstdio>
@@ -16,202 +17,189 @@
 using namespace std;
 
 #define INF 0x3f3f3f3f
-#define PI acos(-1)
 typedef long long ll;
+typedef unsigned long long ull;
 
-#define readi(i1) scanf("%d", &i1)
-#define readi2(i1, i2) scanf("%d %d", &i1, &i2)
-#define readi3(i1, i2, i3) scanf("%d %d %d", &i1, &i2, &i3)
-#define readi4(i1, i2, i3, i4) scanf("%d %d %d %d", &i1, &i2, &i3, &i4)
-#define reads(s1) scanf("%s", s1)
-#define mset(mem, val) memset(mem, val, sizeof(mem))
-#define rep(i, begin, end) for (int i = (begin); i <= (end); i++)
+inline int readi(int &i1) { return scanf("%d", &i1); }
+inline int readi(int &i1, int &i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int &i1, int &i2, int &i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int &i1, int &i2, int &i3, int &i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char *s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
 #define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
-#define repne(i, begin, end) for (int i = (begin); i < (end); i++)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=1e5+10;
+const int MAXN = 1e5 + 10;
 
-struct Node;
 struct Edge
 {
-    int to, nxt;
-}edges[MAXN<<1];
-struct Node
+    int from, to, nxt;
+} edges[MAXN << 1];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
 {
-    ll val;
-    int first_edge;
-    int dep, rank, pos;
-    int fa, son, top;
-}nodes[MAXN];
-
-int n_edge;
-void add_edge(int from,int to)
-{
-    Edge& e=edges[n_edge];
-    e.to=to;
-    e.nxt=nodes[from].first_edge;
-    nodes[from].first_edge=n_edge++;
+    edges[edgeid] = (Edge){from, to, head[from]};
+    head[from] = edgeid++;
 }
 
-void dfs1(int id,int pre)
+struct QTreeNode // 树链剖分
 {
-    Node& cur=nodes[id];
-    cur.fa=pre;
-    cur.dep=nodes[pre].dep+1;
-    int maxrk=cur.rank=1;
-    for(int i=cur.first_edge; ~i; i=edges[i].nxt)
+    ll val;           // 节点的权值
+    int dep, sz, pos; // 深度、秩、在线段树中的位置
+    int fa, son, top; // 父节点，重儿子，重链顶端节点
+} nodes[MAXN];
+int dfsid = 0;
+int rpos[MAXN];           // 线段树中i位置对应的节点编号为rpos[i]，与pos互逆
+void dfs1(int u, int pre) // u-当前节点 pre-父节点
+{
+    QTreeNode &cur = nodes[u];
+    cur.fa = pre;
+    cur.dep = nodes[pre].dep + 1;
+    int maxsz = cur.sz = 1;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        int v=edges[i].to;
-        if(v==pre)continue;
-        dfs1(v,id);
-        cur.rank+=nodes[v].rank;
-        if(nodes[v].rank >= maxrk)
+        int v = edges[i].to;
+        if (v == pre)
+            continue;
+        dfs1(v, u);
+        cur.sz += nodes[v].sz;
+        if (nodes[v].sz >= maxsz)
         {
-            maxrk=nodes[v].rank;
-            cur.son=v;
+            maxsz = nodes[v].sz;
+            cur.son = v;
         }
     }
 }
-
-int timer=1;
-int rpos[MAXN];
-void dfs2(int id,int top)
+void dfs2(int u, int top) // u-当前节点 top-重链顶端节点
 {
-    Node& cur=nodes[id];
-    cur.pos=timer;
-    rpos[timer++]=id;
-    cur.top=top;
-    if(cur.son)dfs2(cur.son, top);
-    for(int i=cur.first_edge; ~i; i=edges[i].nxt)
+    QTreeNode &cur = nodes[u];
+    cur.pos = ++dfsid, rpos[dfsid] = u;
+    cur.top = top;
+    if (cur.son)            // 如果不是叶节点
+        dfs2(cur.son, top); // 先剖重链
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        int v=edges[i].to;
-        if(v==cur.fa || v==cur.son)continue;
-        dfs2(v, v);
+        int v = edges[i].to;
+        if (v == cur.fa || v == cur.son)
+            continue;
+        dfs2(v, v); // 再剖轻链
     }
 }
 
-int n,m,r;
 ll mod;
-struct SegTreeNode
+struct SegTreeNode // 线段树
 {
-    ll sum, lazy;
-}segtree[MAXN<<2];
-
+    ll sum, lazy; // 区间和，lazy标记
+} segtree[MAXN << 2];
 void push_up(int p)
 {
-    segtree[p].sum=(segtree[p<<1].sum+segtree[p<<1|1].sum)%mod;
+    segtree[p].sum = (segtree[p << 1].sum + segtree[p << 1 | 1].sum) % mod;
 }
-
 void push_down(int p, int lt, int rt)
 {
-    if(!segtree[p].lazy)return;
-    int lc=p<<1, rc=lc|1;
-    int mid=(lt+rt)>>1;
-    segtree[lc].sum=(segtree[lc].sum+segtree[p].lazy*(mid-lt+1))%mod;
-    segtree[lc].lazy=(segtree[lc].lazy+segtree[p].lazy)%mod;
-    segtree[rc].sum=(segtree[rc].sum+segtree[p].lazy*(rt-mid))%mod;
-    segtree[rc].lazy=(segtree[rc].lazy+segtree[p].lazy)%mod;
-    segtree[p].lazy=0;
+    if (!segtree[p].lazy)
+        return;
+    int lc = p << 1, rc = lc | 1;
+    int mid = (lt + rt) >> 1;
+    segtree[lc].sum = (segtree[lc].sum + segtree[p].lazy * (mid - lt + 1)) % mod;
+    segtree[lc].lazy = (segtree[lc].lazy + segtree[p].lazy) % mod;
+    segtree[rc].sum = (segtree[rc].sum + segtree[p].lazy * (rt - mid)) % mod;
+    segtree[rc].lazy = (segtree[rc].lazy + segtree[p].lazy) % mod;
+    segtree[p].lazy = 0;
 }
-
 void build(int p, int lt, int rt)
 {
-    if(lt==rt)
+    if (lt == rt)
     {
-        segtree[p].sum=nodes[rpos[lt]].val;
+        segtree[p].sum = nodes[rpos[lt]].val;
         return;
     }
-    int mid=(lt+rt)>>1;
-    build(p<<1, lt, mid);
-    build(p<<1|1, mid+1, rt);
+    int mid = (lt + rt) >> 1;
+    build(p << 1, lt, mid);
+    build(p << 1 | 1, mid + 1, rt);
     push_up(p);
 }
-
-int qlt, qrt;
-ll qval;
-void add_help(int p, int lt, int rt)
+// 线段树区间修改 qlt-区间左边界 qrt-区间右边界 qval-加多少
+void add_range(int p, int lt, int rt, int qlt, int qrt, ll qval)
 {
-    // printf("add_help %d %d %d\n",p,lt,rt);
-    if(qlt<=lt && rt<=qrt)
+    if (qlt <= lt && rt <= qrt)
     {
-        segtree[p].sum=(segtree[p].sum+qval*(rt-lt+1))%mod;
-        segtree[p].lazy=(segtree[p].lazy+qval)%mod;
+        segtree[p].sum = (segtree[p].sum + qval * (rt - lt + 1)) % mod;
+        segtree[p].lazy = (segtree[p].lazy + qval) % mod;
         return;
     }
     push_down(p, lt, rt);
-    int lc=p<<1, rc=lc|1;
-    int mid=(lt+rt)>>1;
-    if(qlt<=mid)add_help(lc, lt, mid);
-    if(mid<qrt)add_help(rc, mid+1, rt);
+    int lc = p << 1, rc = lc | 1;
+    int mid = (lt + rt) >> 1;
+    if (qlt <= mid)
+        add_range(lc, lt, mid, qlt, qrt, qval);
+    if (mid < qrt)
+        add_range(rc, mid + 1, rt, qlt, qrt, qval);
     push_up(p);
 }
-void add(int lt, int rt, ll val)
+// 线段树区间查询 qlt-区间左边界 qrt-区间右边界 返回区间和
+ll query_range(int p, int lt, int rt, int qlt, int qrt)
 {
-    qlt=lt, qrt=rt, qval=val%mod;
-    add_help(1,1,n);
-}
-
-ll query_help(int p, int lt, int rt)
-{
-    if(qlt<=lt && rt<=qrt)return segtree[p].sum;
+    if (qlt <= lt && rt <= qrt)
+        return segtree[p].sum;
     push_down(p, lt, rt);
-    int lc=p<<1, rc=lc|1;
-    int mid=(lt+rt)>>1;
-    ll ans=0;
-    if(qlt<=mid)ans=query_help(lc, lt, mid);
-    if(mid<qrt)ans=(ans+query_help(rc, mid+1, rt))%mod;
+    int lc = p << 1, rc = lc | 1;
+    int mid = (lt + rt) >> 1;
+    ll ans = 0;
+    if (qlt <= mid)
+        ans = query_range(lc, lt, mid, qlt, qrt);
+    if (mid < qrt)
+        ans = (ans + query_range(rc, mid + 1, rt, qlt, qrt)) % mod;
     return ans;
 }
-ll query(int lt, int rt)
+// 树链修改 n-节点总数 x,y-链的端点 qval-加多少
+void add_chain(int n, int x, int y, ll qval)
 {
-    qlt=lt, qrt=rt;
-    return query_help(1,1,n)%mod;
-}
-
-void add_chain(int x, int y, ll val)
-{
-    int topx=nodes[x].top, topy=nodes[y].top;
-    while(topx != topy)
+    int topx = nodes[x].top, topy = nodes[y].top;
+    while (topx != topy) // 如果不在一条链上
     {
-        if(nodes[topx].dep>=nodes[topy].dep)
+        if (nodes[topx].dep >= nodes[topy].dep)
         {
-            add(nodes[topx].pos, nodes[x].pos, val);
-            x=nodes[topx].fa;
-            topx=nodes[x].top;
+            add_range(1, 1, n, nodes[topx].pos, nodes[x].pos, qval);
+            x = nodes[topx].fa;
+            topx = nodes[x].top;
         }
         else
         {
-            add(nodes[topy].pos, nodes[y].pos, val);
-            y=nodes[topy].fa;
-            topy=nodes[y].top;
+            add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
+            y = nodes[topy].fa;
+            topy = nodes[y].top;
         }
     }
-    if(nodes[x].dep>nodes[y].dep)swap(x,y);
-    add(nodes[x].pos, nodes[y].pos, val);
+    if (nodes[x].dep > nodes[y].dep)
+        swap(x, y);
+    add_range(1, 1, n, nodes[x].pos, nodes[y].pos, qval);
 }
-
-ll query_chain(int x, int y)
+// 树链查询 n-节点总数 x,y-链的端点
+ll query_chain(int n, int x, int y)
 {
-    ll ans=0;
-    int topx=nodes[x].top, topy=nodes[y].top;
-    while(topx != topy)
+    ll ans = 0;
+    int topx = nodes[x].top, topy = nodes[y].top;
+    while (topx != topy)
     {
-        if(nodes[topx].dep>=nodes[topy].dep)
+        if (nodes[topx].dep >= nodes[topy].dep)
         {
-            ans=(ans+query(nodes[topx].pos, nodes[x].pos))%mod;
-            x=nodes[topx].fa;
-            topx=nodes[x].top;
+            ans = (ans + query_range(1, 1, n, nodes[topx].pos, nodes[x].pos)) % mod;
+            x = nodes[topx].fa;
+            topx = nodes[x].top;
         }
         else
         {
-            ans=(ans+query(nodes[topy].pos, nodes[y].pos))%mod;
-            y=nodes[topy].fa;
-            topy=nodes[y].top;
+            ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
+            y = nodes[topy].fa;
+            topy = nodes[y].top;
         }
     }
-    if(nodes[x].dep>nodes[y].dep)swap(x,y);
-    ans=(ans+query(nodes[x].pos,nodes[y].pos))%mod;
+    if (nodes[x].dep > nodes[y].dep)
+        swap(x, y);
+    ans = (ans + query_range(1, 1, n, nodes[x].pos, nodes[y].pos)) % mod;
     return ans;
 }
 
@@ -221,42 +209,46 @@ int main()
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    readi3(n,m,r);
-    scanf("%lld",&mod);
-    rep(i,1,n)
+    int n, m, r; // 节点数、询问数、根节点编号
+    readi(n, m, r);
+    scanf("%lld", &mod); // 取模
+    rep(i, 1, n) scanf("%lld", &nodes[i].val);
+    clr(head, -1);
+    repne(i, 1, n) // 建树
     {
-        scanf("%lld",&nodes[i].val);
-        nodes[i].first_edge=-1;
+        int x, y;
+        readi(x, y);
+        addedge(x, y);
+        addedge(y, x);
     }
-    repne(i,1,n)
+    dfs1(r, 0); // 两遍dfs完成树链剖分
+    dfs2(r, r);
+    build(1, 1, n); // 建线段树
+    while (m--)
     {
-        int x,y; readi2(x,y);
-        add_edge(x,y); add_edge(y,x);
-    }
-    dfs1(r,0); dfs2(r,r);
-    build(1,1,n);
-    while(m--)
-    {
-        int op; readi(op);
-        int x,y; ll z;
-        switch(op)
+        int op;
+        readi(op);
+        int x, y;
+        ll z;
+        switch (op)
         {
-            case 1:
-            readi2(x,y);
-            scanf("%lld",&z);
-            add_chain(x,y,z);
+        case 1: // 从x到y的链节点权值加上z
+            readi(x, y);
+            scanf("%lld", &z);
+            add_chain(n, x, y, z);
             break;
-            case 2:
-            readi2(x,y);
-            printf("%lld\n",query_chain(x,y));
+        case 2: // 查询x到y的链的和
+            readi(x, y);
+            printf("%lld\n", query_chain(n, x, y));
             break;
-            case 3:
-            readi(x); scanf("%lld",&z);
-            add(nodes[x].pos, nodes[x].pos+nodes[x].rank-1, z);
-            break;
-            case 4:
+        case 3: // 以x为根的子树节点权值加z
             readi(x);
-            printf("%lld\n",query(nodes[x].pos, nodes[x].pos+nodes[x].rank-1));
+            scanf("%lld", &z);
+            add_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1, z);
+            break;
+        case 4: // 查询以x为根节点的子树的节点权值和
+            readi(x);
+            printf("%lld\n", query_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1));
             break;
         }
     }

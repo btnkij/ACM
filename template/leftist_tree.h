@@ -7,11 +7,8 @@
 #include <algorithm>
 
 const int MAXN = 1e5 + 10;
+
 int val[MAXN], dis[MAXN], fa[MAXN], son[MAXN][2];
-int findr(int x)
-{
-    return x == fa[x] ? x : fa[x] = findr(fa[x]);
-}
 int join(int x, int y) // 合并以x, y为根的堆, x或y作为新的根
 {
     if(x == 0 || y == 0)return x | y;

@@ -113,7 +113,7 @@ struct
         // memset(vis + 1, false, sizeof(bool) * G->n_node);
         // memset(tree, false, sizeof(bool) * G->n_edge);
         ll ans = 0;
-        priority_queue<HeapNode> Q;
+        std::priority_queue<HeapNode> Q;
         vis[1] = true;
         int cnt = 1;
         for(int i = G->head[1]; ~i; i = G->nxt[i])

@@ -19,8 +19,10 @@ struct kmp
             if(pre == -1 || pat[pre] == pat[cur])
             {
                 pre++, cur++;
-                nxt[cur] = (pat[pre] == pat[cur] ? nxt[pre] : pre); // next数组优化，表示最终回退位置
-                // nxt[cur] = pre; //不优化，表示最大前后缀长度
+                // next数组优化，表示最终回退位置
+                nxt[cur] = (pat[pre] == pat[cur] ? nxt[pre] : pre);
+                //不优化，表示最大前后缀长度
+                // nxt[cur] = pre;
             }
             else
             {

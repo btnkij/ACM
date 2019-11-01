@@ -13,7 +13,7 @@ struct gauss_elimination
 {
     double* mat[MAXN];
     // 保证系数矩阵为方阵，化为行最简矩阵
-    int operator()(double arr[][MAXN], int nequ)
+    int operator()(double arr[][MAXN], int nequ) // 系数矩阵，行数
     {
         for(int i = 0; i < nequ; i++)
             mat[i] = arr[i];

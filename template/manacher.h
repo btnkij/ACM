@@ -8,8 +8,8 @@
 
 struct manacher
 {
-    char s[2000100];
-    int palin[2000100];
+    char s[2000100]; // #分隔的字符串
+    int palin[2000100]; // 以i为对称轴的回文串长度为palin[i]-1
     void loadString(const char* str)
     {
         char* p = s;
@@ -21,7 +21,7 @@ struct manacher
             *(p++) = '#';
         }
     }
-    void init()
+    void calc_palin() // 计算palin数组
     {
         int p, far = 0;
         for(int i = 0; s[i]; i++)

@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <algorithm>
 
-void quick_sort(int* begin, int* end)
+void quick_sort(int* begin, int* end) // 传首尾指针，左闭右开区间
 {
     if(end - begin <= 1)return;
     std::swap(*begin, *(begin + rand() % (end - begin)));

@@ -3,6 +3,7 @@
 * Title:Reincarnation
 * Status:AC
 * Tag:[后缀自动机, sam]
+* desc: 查询字符串任意区间中不同子串的个数
 **/
 
 #include <cstdio>
@@ -30,7 +31,7 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=2010;
+const int MAXN=2010; // 字符串长度
 struct Node
 {
     int pos;
