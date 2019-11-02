@@ -1,7 +1,7 @@
 /**
 * Number:hdu1024
 * Title:Max Sum Plus Plus
-* Status:?
+* Status:AC
 * Tag:[dp, 滚动数组]
 **/
 
@@ -31,7 +31,8 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-ll arr[1000010],dp[2][1000010][2];
+const int MAXN=1e6+10;
+ll arr[MAXN],dp[2][MAXN][2];
 int main()
 {
 #ifdef __DEBUG__
@@ -43,16 +44,17 @@ int main()
     {
         rep(i,1,n)scanf("%lld",arr+i);
         int pre=0,cur=1;
-        dp[cur][1][0]=-INF, dp[cur][1][1]=arr[1];
-        for(int i=2;i<=n;i++)
+        rep(i,0,m)dp[cur][i][0]=dp[cur][i][1]=-INF;
+        dp[cur][0][0]=0;
+        for(int i=1;i<=n;i++)
         {
             swap(pre,cur);
-            int maxj=min(i,m);
-            for(int j=1;j<=maxj;j++)
+            rep(i,0,m)dp[cur][i][0]=dp[cur][i][1]=-INF;
+            dp[cur][0][0]=0;
+            for(int j=1;j<=m;j++)
             {
                 dp[cur][j][0]=max(dp[pre][j][0],dp[pre][j][1]);
-                dp[cur][j][1]=max(dp[pre][j-1][0],dp[pre][j-1][1])+arr[i];
-                if(i-1>=j)dp[cur][j][1]=max(dp[cur][j][1],dp[pre][j][1]+arr[i]);
+                dp[cur][j][1]=max(dp[pre][j-1][0],max(dp[pre][j-1][1],dp[pre][j][1]))+arr[i];
             }
         }
         printf("%lld\n",max(dp[cur][m][0],dp[cur][m][1]));
