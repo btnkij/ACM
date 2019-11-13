@@ -1,8 +1,8 @@
 /**
 * Number:uva101
 * Title:The Blocks Problem
-* Status:?
-* Tag:[]
+* Status:AC
+* Tag:[模拟, vector]
 **/
 
 #include <cstdio>
@@ -31,25 +31,79 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
+vector<int> st[30];
+int pos[30];
+void returnback(int x)
+{
+    auto& stx=st[pos[x]];
+    for(int i=stx.size()-1;stx[i]!=x;i--)
+    {
+        int j=stx[i];
+        if(j==pos[x])continue;
+        st[j].push_back(pos[j]=j);
+        stx.erase(stx.begin()+i);
+    }
+}
+void pileover(int x,int y)
+{
+    auto& stx=st[pos[x]];
+    int i=find(stx.begin(),stx.end(),x)-stx.begin();
+    for(int j=i;j<stx.size();j++)
+    {
+        pos[stx[j]]=pos[y];
+        st[pos[y]].push_back(stx[j]);
+    }
+    stx.erase(stx.begin()+i,stx.end());
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    
+    int n;
+    while(readi(n)!=EOF)
+    {
+        repne(i,0,n)
+        {
+            st[i].clear();
+            st[i].push_back(pos[i]=i);
+        }
+        int a,b; char s1[8],s2[8];
+        while(reads(s1)!=EOF && s1[0]!='q')
+        {
+            scanf("%d %s %d",&a,s2,&b);
+            if(pos[a]==pos[b])continue;
+            if(s1[0]=='m' && s2[1]=='n') // move a onto b
+            {
+                returnback(a);
+                returnback(b);
+                pileover(a,b);
+            }
+            else if(s1[0]=='m' && s2[1]=='v') // move a over b
+            {
+                returnback(a);
+                pileover(a,b);
+            }
+            else if(s1[0]=='p' && s2[1]=='n') // pile a onto b
+            {
+                returnback(b);
+                pileover(a,b);
+            }
+            else if(s1[0]=='p' && s2[1]=='v') // pile a over b
+            {
+                pileover(a,b);
+            }
+        }
+        repne(i,0,n)
+        {
+            printf("%d:", i);
+            repne(j,0,st[i].size())
+            {
+                printf(" %d",st[i][j]);
+            }
+            puts("");
+        }
+    }
     return 0;
 }
-
-/*
-0
-19876
-2
-3
-4
-5
-
-
-
-
-*/
