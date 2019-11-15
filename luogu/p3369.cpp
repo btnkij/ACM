@@ -36,43 +36,157 @@ struct SplayTree
 {
     struct Node
     {
-        int son[2], fa, sz;
+        int son[2], fa, sz, cnt;
         T val;
     }tree[MAXN];
-    int nodeid;
+    int nodeid,root;
     inline int makenode(T val)
     {
         tree[++nodeid]=(Node){0,0,0,1,val};
         return nodeid;
     }
+    inline void link(int u,int fa,int d)
+    {
+        tree[u].fa=fa;
+        tree[fa].son[d]=u;
+    }
+    void init()
+    {
+        memset(tree[nodeid=0],0,sizeof(Node));
+        link(root=makenode(INF),0,0);
+        link(makenode(-INF),root,0);
+    }
     inline void pushup(int u)
     {
-        tree[u].sz=tree[tree[u].son[0]].sz+tree[tree[u].son[1]].sz+1;
+        Node& nod=tree[u];
+        nod.sz=tree[nod.son[0]].sz+tree[nod.son[1]].sz+nod.cnt;
     }
     inline int dir(int u)
     {
         return tree[tree[u].fa].son[1]==u;
     }
-    inline void link(int u,int fa,int d)
-    {
-        tree[u].fa=fa;
-        if(fa)tree[fa].son[d]=u;
-    }
     void rotate(int u)
     {
-        int fa=tree[u].fa;
-        int ffa=tree[fa].fa;
-        int rson=tree[u].son[1];
+        int fa=tree[u].fa, dfa=dir(u);
+        int ffa=tree[fa].fa, dffa=dir(fa);
+        int son=tree[u].son[dfa^1];
+        link(u,ffa,dffa); link(fa,u,dfa^1); link(son,fa,dfa);
+        pushup(fa); pushup(u);
+    }
+    void splay(int u,int top)
+    {
+        for(int fa=tree[u].fa;fa!=top;)
+        {
+            if(tree[fa].fa)
+                rotate(dir(u)==dir(fa)?tree[fa].fa:fa);
+            rotate(u);
+        }
+    }
+    int findpos(T val, int subtree)
+    {
+        while(true)
+        {
+            Node& nod=tree[subtree];
+            if(val<nod.val && nod.son[0])subtree=nod.son[0];
+            else if(val>nod.val && nod.son[1])subtree=nod.son[1];
+            else break;
+        }
+        return subtree;
+    }
+    int find(T val)
+    {
+        root=findpos(val,tree[0].son[0]);
+        splay(root,0);
+        return tree[root].val==val ? root : 0;
+    }
+    int prev(T val)
+    {
+        find(val);
+        if(tree[root].val<val)return root;
+        else return findpos(val,tree[root].son[0]);
+    }
+    int next(T val)
+    {
+        find(val);
+        if(tree[root].val>val)return root;
+        else return findpos(val,tree[root].son[1]);
+    }
+    void insert(T val)
+    {
+        int u=findpos(val,root),v;
+        if(tree[u].val==val)tree[v=u].cnt++;
+        else link(v=makenode(val),u,val>tree[u].val);
+        splay(v,0);
+    }
+    void remove(T val)
+    {
+        if(!find(val))return;
+        if(tree[root].cnt>1)
+        {
+            tree[root].cnt--;
+            tree[root].sz--;
+        }
+        else
+        {
+            int l=findpos(val,tree[root].son[0]);
+            int r=findpos(val,tree[root].son[1]);
+            splay(l,0); splay(r,l);
+            tree[r].son[0]=0;
+            pushup(r); pushup(l);
+        }
+    }
+    int rank(T val)
+    {
+        find(val);
+        if(tree[root].val>=val)return tree[tree[root].son[0]].sz;
+        else return tree[tree[root].son[0]].sz+tree[root].cnt;
+    }
+    int kth(int k)
+    {
+        k++;
+        for(int u=root;k;)
+        {
+            int l=tree[u].son[0], r=tree[u].son[1];
+            if(k<=tree[l].sz)u=l;
+            else if(k<=tree[l].sz+tree[u].cnt)return tree[u].val;
+            else u=r,k-=tree[l].sz+tree[u].cnt;
+        }
     }
 };
 
+SplayTree<int,100010> splay;
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    
+    int n; readi(n);
+    while(n--)
+    {
+        int op,x; readi(op,x);
+        switch(op)
+        {
+        case 1:
+            splay.insert(x);
+            break;
+        case 2:
+            splay.remove(x);
+            break;
+        case 3:
+            printf("%d\n",splay.rank(x));
+            break;
+        case 4:
+            printf("%d\n",splay.kth(x));
+            break;
+        case 5:
+            printf("%d\n",splay.tree[splay.prev(x)]);
+            break;
+        case 6:
+            printf("%d\n",splay.tree[splay.next(x)]);
+            break;
+        }
+    }
     return 0;
 }
 
