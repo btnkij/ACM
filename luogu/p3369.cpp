@@ -36,122 +36,122 @@ struct SplayTree
 {
     struct Node
     {
-        int son[2], fa, sz, cnt;
         T val;
+        int sz, cnt;
+        Node *fa, *son[2];
     }tree[MAXN];
-    int nodeid,root;
-    inline int makenode(T val)
+    #define null ((Node*)&tree[0])
+    #define root tree[0].son[0]
+    int nodeid;
+    inline Node* makenode(T val)
     {
-        tree[++nodeid]=(Node){0,0,0,1,val};
-        return nodeid;
+        tree[++nodeid]=(Node){val,1,1,null,null,null};
+        return tree+nodeid;
     }
-    inline void link(int u,int fa,int d)
+    inline void link(Node* u,Node* fa,int d)
     {
-        tree[u].fa=fa;
-        tree[fa].son[d]=u;
+        if(u!=null)u->fa=fa;
+        fa->son[d]=u;
     }
     void init()
     {
-        memset(tree[nodeid=0],0,sizeof(Node));
-        link(root=makenode(INF),0,0);
+        tree[nodeid=0]=(Node){0,0,0,null,null,null};
+        root=makenode(INF);
         link(makenode(-INF),root,0);
     }
-    inline void pushup(int u)
+    inline void pushup(Node* u)
     {
-        Node& nod=tree[u];
-        nod.sz=tree[nod.son[0]].sz+tree[nod.son[1]].sz+nod.cnt;
+        u->sz = u->cnt + u->son[0]->sz + u->son[1]->sz;
     }
-    inline int dir(int u)
+    inline int dir(Node* u)
     {
-        return tree[tree[u].fa].son[1]==u;
+        return u->fa->son[1] == u;
     }
-    void rotate(int u)
+    void rotate(Node* u)
     {
-        int fa=tree[u].fa, dfa=dir(u);
-        int ffa=tree[fa].fa, dffa=dir(fa);
-        int son=tree[u].son[dfa^1];
-        link(u,ffa,dffa); link(fa,u,dfa^1); link(son,fa,dfa);
-        pushup(fa); pushup(u);
+        Node *fa=u->fa, *ffa=fa->fa;
+        int dfa=dir(u), dffa=dir(fa);
+        link(u,ffa,dffa);
+        link(u->son[dfa^1],fa,dfa);
+        link(fa,u,dfa^1);
+        pushup(fa);
+        pushup(u);
     }
-    void splay(int u,int top)
+    void splay(Node* u,Node* top)
     {
-        for(int fa=tree[u].fa;fa!=top;)
+        while(u->fa!=top)
         {
-            if(tree[fa].fa)
-                rotate(dir(u)==dir(fa)?tree[fa].fa:fa);
+            if(u->fa->fa!=top)
+                rotate(dir(u)==dir(u->fa)?u->fa:u);
             rotate(u);
         }
     }
-    int findpos(T val, int subtree)
+    Node* findpos(Node* u, T val)
     {
         while(true)
         {
-            Node& nod=tree[subtree];
-            if(val<nod.val && nod.son[0])subtree=nod.son[0];
-            else if(val>nod.val && nod.son[1])subtree=nod.son[1];
-            else break;
+            if(val<u->val && u->son[0]!=null)u=u->son[0];
+            else if(val>u->val && u->son[1]!=null)u=u->son[1];
+            else return u;
         }
-        return subtree;
     }
-    int find(T val)
+    bool find(T val)
     {
-        root=findpos(val,tree[0].son[0]);
-        splay(root,0);
-        return tree[root].val==val ? root : 0;
+        splay(findpos(root,val),null);
+        return root->val==val;
     }
-    int prev(T val)
+    Node* prev(T val)
     {
         find(val);
-        if(tree[root].val<val)return root;
-        else return findpos(val,tree[root].son[0]);
+        if(root->val<val)return root;
+        return findpos(root->son[0],val);
     }
-    int next(T val)
+    Node* next(T val)
     {
         find(val);
-        if(tree[root].val>val)return root;
-        else return findpos(val,tree[root].son[1]);
+        if(root->val>val)return root;
+        return findpos(root->son[1],val);
     }
     void insert(T val)
     {
-        int u=findpos(val,root),v;
-        if(tree[u].val==val)tree[v=u].cnt++;
-        else link(v=makenode(val),u,val>tree[u].val);
-        splay(v,0);
+        Node* u=findpos(root,val),*v;
+        if(u->val==val)u->cnt++,v=u;
+        else link(v=makenode(val),u,val>u->val);
+        splay(v,null);
     }
     void remove(T val)
     {
-        if(!find(val))return;
-        if(tree[root].cnt>1)
-        {
-            tree[root].cnt--;
-            tree[root].sz--;
-        }
-        else
-        {
-            int l=findpos(val,tree[root].son[0]);
-            int r=findpos(val,tree[root].son[1]);
-            splay(l,0); splay(r,l);
-            tree[r].son[0]=0;
-            pushup(r); pushup(l);
-        }
+        Node *l=prev(val), *r=next(val);
+        splay(l,null); splay(r,l);
+        if(r->son[0]->cnt>1)r->son[0]->cnt--;
+        else r->son[0]=null;
+        splay(r->son[0],null);
     }
     int rank(T val)
     {
         find(val);
-        if(tree[root].val>=val)return tree[tree[root].son[0]].sz;
-        else return tree[tree[root].son[0]].sz+tree[root].cnt;
+        if(root->val>=val)return root->son[0]->sz;
+        return root->son[0]->sz+root->cnt;
     }
-    int kth(int k)
+    T kth(int k)
     {
         k++;
-        for(int u=root;k;)
+        Node* u=root;
+        while(true)
         {
-            int l=tree[u].son[0], r=tree[u].son[1];
-            if(k<=tree[l].sz)u=l;
-            else if(k<=tree[l].sz+tree[u].cnt)return tree[u].val;
-            else u=r,k-=tree[l].sz+tree[u].cnt;
+            if(u->son[0]->sz>=k)
+            {
+                u=u->son[0];
+                continue;
+            }
+            k-=u->son[0]->sz;
+            if(u->cnt>=k)return u->val;
+            k-=u->cnt;
+            u=u->son[1];
         }
     }
+    #undef null
+    #undef root
 };
 
 SplayTree<int,100010> splay;
@@ -162,6 +162,7 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     int n; readi(n);
+    splay.init();
     while(n--)
     {
         int op,x; readi(op,x);
@@ -180,10 +181,10 @@ int main()
             printf("%d\n",splay.kth(x));
             break;
         case 5:
-            printf("%d\n",splay.tree[splay.prev(x)]);
+            printf("%d\n",splay.prev(x)->val);
             break;
         case 6:
-            printf("%d\n",splay.tree[splay.next(x)]);
+            printf("%d\n",splay.next(x)->val);
             break;
         }
     }
