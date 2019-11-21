@@ -1,10 +1,10 @@
 /**
  * 
- * 并查集
+ * 并查集 DSU
  * 
 **/
 
-struct union_find_set
+struct disjoint_set_union
 {
     int fa[10010];
     void clear(int n)
