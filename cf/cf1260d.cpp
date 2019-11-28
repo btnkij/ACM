@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -23,38 +24,48 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-char s[200010];
+const int MAXN=2e5+10;
+int a[MAXN];
+struct Node
+{
+    int l,r,d;
+    bool operator<(const Node& rhs)const
+    {
+        return l<rhs.l;
+    }
+}nodes[MAXN];
+bool check(int n,int k,int mid,int t)
+{
+    int ans=0,pre=0;
+    repne(i,0,k)
+    {
+        Node& nod=nodes[i];
+        if(nod.d>mid)
+        {
+            ans+=max(0,nod.r-max(nod.l,pre)+1);
+            pre=max(pre,nod.r+1);
+        }
+    }
+    return n+ans*2+1<=t;
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    while(T--)
+    int m,n,k,t; readi(m,n,k,t);
+    repne(i,0,m)readi(a[i]);
+    repne(i,0,k)readi(nodes[i].l,nodes[i].r,nodes[i].d);
+    sort(nodes,nodes+k);
+    int lt=0,rt=MAXN;
+    while(lt<rt)
     {
-        reads(s);
-        int len=strlen(s);
-        int lzero=0;
-        int ans=0;
-        for(int i=0;i<len;i++)
-        {
-            if(s[i]=='0')
-            {
-                lzero++;
-            }
-            else
-            {
-                int num=0;
-                for(int j=0;i+j<len && j<20;j++)
-                {
-                    num=(num<<1)+(s[i+j]&0xF);
-                    if(lzero+j+1>=num)ans++;
-                }
-                lzero=0;
-            }
-        }
-        printf("%d\n",ans);
+        int mid=(lt+rt)>>1;
+        if(check(n,k,mid,t))rt=mid;
+        else lt=mid+1;
     }
+    int ans=count_if(a,a+m,[lt](int x){return x>=lt;});
+    printf("%d\n",ans);
     return 0;
 }

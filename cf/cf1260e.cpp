@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
-#include <string>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -23,31 +24,26 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-string a,b;
+ll a[1<<20];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    ios::sync_with_stdio(false); cin.tie(0);
-    int T; cin>>T;
-    while(T--)
+    int n; readi(n);
+    rep(i,1,n)scanf("%lld",a+i);
+    priority_queue<ll,vector<ll>,greater<ll> > Q;
+    ll ans=0;
+    for(int i=n;a[i]!=-1;i--)
     {
-        cin>>a>>b;
-        while(b.back()=='0')
+        Q.push(a[i]);
+        if((i&(i-1))==0)
         {
-            a.pop_back();
-            b.pop_back();
-        }
-        if(a.length()==0 || b.length()==0)
-        {
-            cout<<"0"<<endl;
-        }
-        else
-        {
-            cout<<a.length()-a.find_last_of('1')-1<<endl;
+            ans+=Q.top();
+            Q.pop();
         }
     }
+    printf("%lld\n",ans);
     return 0;
 }

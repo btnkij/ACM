@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -23,32 +24,23 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-ll h[1010];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    while(T--)
+    int n; readi(n);
+    while(n--)
     {
-        int n; readi(n);
-        ll m,k; scanf("%lld %lld",&m,&k);
-        repne(i,0,n)scanf("%lld",h+i);
-        if(n==1)
-        {
-            printf("YES\n");
-            continue;
-        }
-        repne(i,1,n)
-        {
-            ll d=h[i]-h[i-1];
-            if(d>k)m-=d-k;
-            else m+=min(h[i-1],h[i-1]-(h[i]-k));
-        }
-        if(m<0)printf("NO\n");
-        else printf("YES\n");
+        int a,b; readi(a,b);
+        bool ok=true;
+        if((a+b)%3!=0)ok=false;
+        int xy=(a+b)/3;
+        if(a-xy<0 || b-xy<0)ok=false;
+        if(ok)printf("YES");
+        else printf("NO");
+        if(n)printf("\n");
     }
     return 0;
 }

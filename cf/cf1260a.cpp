@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -23,26 +24,23 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-ll gcd(ll a,ll b)
-{
-    return b==0 ? a : gcd(b,a%b);
-}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    ll n,m,q; scanf("%lld %lld %lld",&n,&m,&q);
-    ll d=gcd(n,m);
-    ll d1=n/d,d2=m/d;
-    while(q--)
+    int n; readi(n);
+    while(n--)
     {
-        ll sx,sy,ex,ey; scanf("%lld %lld %lld %lld",&sx,&sy,&ex,&ey);
-        sy--, ey--;
-        ll p1= sx==1 ? sy/d1 : sy/d2;
-        ll p2= ex==1 ? ey/d1 : ey/d2;
-        printf("%s\n",p1==p2 ? "YES" : "NO");
+        int c,sum; readi(c,sum);
+        if(c>=sum)
+        {
+            printf("%d\n",sum);
+            continue;
+        }
+        ll t=sum/c;
+        printf("%lld\n",(sum%c)*(t+1)*(t+1)+(c-sum%c)*t*t);
     }
     return 0;
 }

@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -23,33 +24,25 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-char num1[100010],num7[100010];
+ll gcd(ll a,ll b)
+{
+    return b==0 ? a : gcd(b,a%b);
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    clr(num1,'1');
-    clr(num7,'7');
     int T; readi(T);
     while(T--)
     {
-        int n; readi(n);
-        int mm=(int)sqrt(n+0.5);
-        int a,b,tmp=INF;
-        for(int i=1;i<=mm;i++)
-        {
-            if(n%i!=0)continue;
-            int j=n/i;
-            if(i+j<tmp)
-            {
-                a=i, b=j, tmp=i+j;
-            }
-        }
-        num1[a]='\0'; num7[b]='\0';
-        printf("%s33%s\n",num1,num7);
-        num1[a]='1'; num7[b]='7';
-    }    
+        ll r,b,k; scanf("%lld %lld %lld",&r,&b,&k);
+        if(r>b)swap(r,b);
+        ll lcm=r*b/gcd(r,b);
+        ll n=lcm/b, m=lcm/r-1;
+        if((m+n-1)/n>=k)puts("REBEL");
+        else puts("OBEY");
+    }
     return 0;
 }
