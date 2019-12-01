@@ -1,10 +1,3 @@
-/**
-* Number:hdu1257
-* Title:最少拦截系统
-* Status:?
-* Tag:[dp, 最长上升子序列]
-**/
-
 #include <cstdio>
 #include <iostream>
 #include <cstring>
@@ -31,24 +24,19 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int a[10010],dp[10010];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n;
-    while(readi(n)!=EOF)
+    int T; readi(T);
+    while(T--)
     {
-        rep(i,1,n)readi(a[i]);
-        rep(i,1,n)
-        {
-            int tmp=0;
-            repne(j,1,i)if(a[j]<a[i])tmp=max(tmp,dp[j]);
-            dp[i]=tmp+1;
-        }
-        printf("%d\n",*max_element(dp+1,dp+n+1));
+        int a[3]; readi(a[0],a[1],a[2]);
+        sort(a,a+3);
+        if(a[2]>=a[0]+a[1])printf("%d\n",a[0]+a[1]);
+        else printf("%d\n",a[2]+(a[0]+a[1]-a[2])/2);
     }
     return 0;
 }

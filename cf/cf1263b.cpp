@@ -1,10 +1,3 @@
-/**
-* Number:hdu1160
-* Title:FatMouse's Speed
-* Status:?
-* Tag:[dp]
-**/
-
 #include <cstdio>
 #include <iostream>
 #include <cstring>
@@ -31,48 +24,45 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-struct Node
-{
-    int w,s,id;
-    bool operator<(const Node& rhs)const
-    {
-        return w<rhs.w || w==rhs.w && s<rhs.s;
-    }
-}nodes[100010];
-int dp[100010],pre[100010];
-void show(int k)
-{
-    if(!k)return;
-    show(pre[k]);
-    printf("%d\n",nodes[k].id);
-}
+bool vis[20][20];
+string s[20];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int w,s,n=0;
-    while(readi(w,s)!=EOF)
+    ios::sync_with_stdio(false); cin.tie(NULL);
+    int T; cin>>T;
+    while(T--)
     {
-        int id=++n;
-        nodes[id]=(Node){w,s,id};
-    }
-    sort(nodes+1,nodes+n+1);
-    rep(i,1,n)
-    {
-        int t=0,k=0;
-        repne(j,1,i)
+        int n; cin>>n;
+        clr(vis,false);
+        repne(i,0,n)
         {
-            if(nodes[j].w<nodes[i].w && nodes[j].s>nodes[i].s)
+            cin>>s[i];
+            repne(j,0,4)vis[j][s[i][j]&0xF]=true;
+        }
+        int ans=0;
+        repne(i,0,n)
+        {
+            if(count(s,s+n,s[i])>1)
             {
-                if(dp[j]>t)t=dp[j],k=j;
+                repne2(j,0,4,k,0,10)
+                {
+                    if(!vis[j][k])
+                    {
+                        vis[j][k]=true;
+                        s[i][j]=0x30|k;
+                        goto endfor;
+                    }
+                }
+                endfor:
+                ans++;
             }
         }
-        dp[i]=t+1,pre[i]=k;
+        cout<<ans<<endl;
+        repne(i,0,n)cout<<s[i]<<endl;
     }
-    int* ans=max_element(dp+1,dp+n+1);
-    printf("%d\n",*ans);
-    show(ans-dp);
     return 0;
 }

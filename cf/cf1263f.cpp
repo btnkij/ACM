@@ -1,10 +1,3 @@
-/**
-* Number:hdu1260
-* Title:Tickets
-* Status:?
-* Tag:[dp, 日期计算]
-**/
-
 #include <cstdio>
 #include <iostream>
 #include <cstring>
@@ -31,24 +24,38 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-int s[2010],d[2010],dp[2010];
+const int MAXN=2010;
+struct Edge
+{
+    int from,to,flow,nxt;
+}edges[MAXN*10];
+int head[MAXN],edgeid;
+void addedge(int from,int to,int flow)
+{
+    edges[edgeid]=(Edge){from,to,flow,head[from]};
+    head[from]=edgeid++;
+}
+void addflow(int from,int to,int flow)
+{
+    addedge(from,to,flow);
+    addedge(to,from,0);
+}
+
+
+
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int T; readi(T);
-    while(T--)
+    int n; readi(n);
+    int a; readi(a);
+    rep(i,2,n)
     {
-        int n; readi(n);
-        rep(i,1,n)readi(s[i]);
-        rep(i,2,n)readi(d[i]);
-        dp[0]=0, dp[1]=s[1];
-        rep(i,2,n)dp[i]=min(dp[i-2]+d[i],dp[i-1]+s[i]);
-        int hour=8+dp[n]/3600, minute=dp[n]%3600/60, second=dp[n]%60;
-        if(hour<=12)printf("%02d:%02d:%02d am\n",hour,minute,second);
-        else printf("%02d:%02d:%02d pm\n",hour-12,minute,second);
+        int u; readi(u);
+        addflow(u,i,INF);
     }
+    
     return 0;
 }
