@@ -1,3 +1,10 @@
+/**
+* Number:uva524
+* Title:Prime Ring Problem
+* Status:AC
+* Tag:[dfs, 回溯, 质数]
+**/
+
 #include <cstdio>
 #include <iostream>
 #include <cstring>
@@ -24,46 +31,71 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-char s[100010];
-ll a[100010];
+bool prime[40];
+vector<int> adj[20];
+bool vis[20];
+vector<int> trace;
+int n;
+void dfs()
+{
+    if(trace.size()==n)
+    {
+        if(prime[trace.front()+trace.back()])
+        {
+            repne(i,0,trace.size())
+                printf("%d%c",trace[i],i==trace.size()-1?'\n':' ');
+        }
+        return;
+    }
+    int pre=trace.back();
+    for(int i:adj[pre])
+    {
+        if(!vis[i])
+        {
+            vis[i]=true;
+            trace.push_back(i);
+            dfs();
+            vis[i]=false;
+            trace.pop_back();
+        }
+    }
+}
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n; readi(n);
-    reads(s);
-    repne(i,0,n)scanf("%lld",a+i);
-    ll dp[5][5];
-    clr(dp,0);
-    repne(i,0,5)dp[i][i]=0;
-    repne(x,0,n)
+    int kase=1;
+    trace.push_back(1);
+    vis[1]=true;
+    repne(i,2,40)
     {
-        int sta=0;
-        if(s[x]=='h')sta=1;
-        else if(s[x]=='a')sta=2;
-        else if(s[x]=='r')sta=3;
-        else if(s[x]=='d')sta=4;
-        if(sta)
+        bool flag=true;
+        repne(j,2,i)
         {
-            dp[sta][sta-1]+=a[x];
-            for(int i=4;i>=0;i--)
+            if(i%j==0)
             {
-                for(int j=i-1;j>=0;j--)
-                {
-                    for(int k=j;k<=i;k++)
-                    {
-                        dp[i][j]=min(dp[i][j],dp[i][k]+dp[k][j]);
-                    }
-                }
+                flag=false;
+                break;
             }
         }
+        prime[i]=flag;
     }
-    repne(i,0,5)
+    while(readi(n)!=EOF)
     {
-        repne(j,0,5)printf("%lld ",dp[i][j]);
-        puts("");
+        rep(i,1,n)
+        {
+            adj[i].clear();
+            rep(j,1,n)
+            {
+                if(i==j)continue;
+                if(prime[i+j])adj[i].push_back(j);
+            }
+        }
+        if(kase>1)puts("");
+        printf("Case %d:\n",kase++);
+        dfs();
     }
     return 0;
 }
