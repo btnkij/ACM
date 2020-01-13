@@ -3402,3 +3402,116 @@ Circle InscribedCircle(const Point& p1, const Point& p2, const Point& p3)
 }
 ```
 
+
+
+### regex
+
+```c++
+#include <iostream>
+#include <string>
+#include <regex>
+int main()
+{
+    // Simple regular expression matching
+    const std::string fnames[] = {"foo.txt", "bar.txt", "baz.dat", "zoidberg"};
+    const std::regex txt_regex("[a-z]+\\.txt");
+ 
+    for (const auto &fname : fnames) {
+        std::cout << fname << ": " << std::regex_match(fname, txt_regex) << '\n';
+    }   
+ 
+    // Extraction of a sub-match
+    const std::regex base_regex("([a-z]+)\\.txt");
+    std::smatch base_match;
+ 
+    for (const auto &fname : fnames) {
+        if (std::regex_match(fname, base_match, base_regex)) {
+            // The first sub_match is the whole string; the next
+            // sub_match is the first parenthesized expression.
+            if (base_match.size() == 2) {
+                std::ssub_match base_sub_match = base_match[1];
+                std::string base = base_sub_match.str();
+                std::cout << fname << " has a base of " << base << '\n';
+            }
+        }
+    }
+    // Extraction of several sub-matches
+    const std::regex pieces_regex("([a-z]+)\\.([a-z]+)");
+    std::smatch pieces_match;
+ 
+    for (const auto &fname : fnames) {
+        if (std::regex_match(fname, pieces_match, pieces_regex)) {
+            std::cout << fname << '\n';
+            for (size_t i = 0; i < pieces_match.size(); ++i) {
+                std::ssub_match sub_match = pieces_match[i];
+                std::string piece = sub_match.str();
+                std::cout << "  submatch " << i << ": " << piece << '\n';
+            }   
+        }   
+    }   
+}
+```
+
+```c++
+int main()
+{
+    std::string lines[] = {"Roses are #ff0000",
+                           "violets are #0000ff",
+                           "all of my base are belong to you"};
+    std::regex color_regex("#([a-f0-9]{2})"
+                            "([a-f0-9]{2})"
+                            "([a-f0-9]{2})");
+    // simple match
+    for (const auto &line : lines) {
+        std::cout << line << ": " << std::boolalpha
+                  << std::regex_search(line, color_regex) << '\n';
+    }   
+    std::cout << '\n';
+    // show contents of marked subexpressions within each match
+    std::smatch color_match;
+    for (const auto& line : lines) {
+        if(std::regex_search(line, color_match, color_regex)) {
+            std::cout << "matches for '" << line << "'\n";
+            std::cout << "Prefix: '" << color_match.prefix() << "'\n";
+            for (size_t i = 0; i < color_match.size(); ++i) 
+                std::cout << i << ": " << color_match[i] << '\n';
+            std::cout << "Suffix: '" << color_match.suffix() << "\'\n\n";
+        }
+    }
+    // repeated search (see also std::regex_iterator)
+    std::string log(R"(
+        Speed:	366
+        Mass:	35
+        Speed:	378
+        Mass:	32
+        Speed:	400
+	Mass:	30)");
+    std::regex r(R"(Speed:\t\d*)");
+    std::smatch sm;
+    while(regex_search(log, sm, r))
+    {
+        std::cout << sm.str() << '\n';
+        log = sm.suffix();
+    }
+    // C-style string demo
+    std::cmatch cm;
+    if(std::regex_search("this is a test", cm, std::regex("test"))) 
+        std::cout << "\nFound " << cm[0] << " at position " << cm.prefix().length();
+}
+```
+
+```c++
+#include <iterator>
+#include <regex>
+int main()
+{
+   std::string text = "Quick brown fox";
+   std::regex vowel_re("a|e|i|o|u");
+   // write the results to an output iterator
+   std::regex_replace(std::ostreambuf_iterator<char>(std::cout),
+                      text.begin(), text.end(), vowel_re, "*");
+   // construct a string holding the results
+   std::cout << '\n' << std::regex_replace(text, vowel_re, "[$&]") << '\n';
+}
+```
+

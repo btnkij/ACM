@@ -1,11 +1,19 @@
+/**
+* Number:cf1285e
+* Title:Delete a Segment
+* Status:AC
+* Tag:[扫描线]
+**/
+
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <set>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -23,52 +31,46 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=2e5+10;
-char s[MAXN];
-vector<int> pos0,pos1,pos2;
-int sum8[MAXN],sum9[MAXN];
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,q; readi(n,q);
-    reads(s+1);
-    pos0.push_back(-INF);
-    pos1.push_back(-INF);
-    pos2.push_back(-INF);
-    rep(i,1,n)
+    int T; readi(T);
+    vector<pair<int,int> > events;
+    while(T--)
     {
-        sum8[i]=sum8[i-1], sum9[i]=sum9[i-1];
-        if(s[i]=='8')sum8[i]++;
-        else if(s[i]=='9')sum9[i]++;
-        else if(s[i]=='0')pos0.push_back(i);
-        else if(s[i]=='1')pos1.push_back(i);
-        else if(s[i]=='2')pos2.push_back(i);
-    }
-    while(q--)
-    {
-        int l,r; readi(l,r);
-        int last2=*(upper_bound(pos2.begin(),pos2.end(),r)-1);
-        if(last2<l || last2>r)
+        int n; readi(n);
+        events.clear();
+        rep(i,1,n)
         {
-            printf("-1\n");
-            continue;
+            int l,r; readi(l,r);
+            events.emplace_back(l,-i);
+            events.emplace_back(r,i);
         }
-        int last0=*(upper_bound(pos0.begin(),pos0.end(),last2-1)-1);
-        if(last0<l || last0>last2)
+        sort(events.begin(),events.end());
+        vector<int> cnt(n+1,0);
+        set<int> segs;
+        int tot=0;
+        for(auto& e:events)
         {
-            printf("-1\n");
-            continue;
+            int i=abs(e.second);
+            if(e.second<0)
+            {
+                if(segs.empty())cnt[i]--;
+                segs.insert(i);
+            }
+            else
+            {
+                segs.erase(i);
+                if(segs.empty())cnt[i]--,tot++;
+            }
+            if(segs.size()==1)cnt[*segs.begin()]++;
         }
-        int last1=*(upper_bound(pos1.begin(),pos1.end(),last0-1)-1);
-        if(last1<l || last1>last0 || sum9[last1]-sum9[l-1]<=0)
-        {
-            printf("-1\n");
-            continue;
-        }
-        printf("%d\n",sum8[last1]-sum8[l-1]);
+        rep(i,1,n)printf("%d ",cnt[i]);
+        puts("");
+        printf("%d\n",tot+*max_element(cnt.begin()+1,cnt.end()));
     }
     return 0;
 }
