@@ -1,7 +1,7 @@
 /**
 * Number:poj1015
 * Title:Jury Compromise
-* Status:?
+* Status:WA
 * Tag:[dp]
 **/
 
@@ -87,9 +87,9 @@ int main()
         printf("Best jury has value %d for prosecution and value %d for defence:\n",s1,s2);
         for(int i=ans.size()-1;i>=0;i--)
         {
-            printf("%d%c",ans[i],i?' ':'\n');
+            printf(" %d",ans[i]);
         }
-        puts("");
+        printf("\n\n");
     }
     return 0;
 }
