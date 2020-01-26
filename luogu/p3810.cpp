@@ -3,6 +3,7 @@
 * Title:【模板】三维偏序（陌上花开）
 * Status:AC
 * Tag:[cdq, 分治, 归并排序]
+* desc:定义三维偏序A(x1,y1,z1)<=B(x2,y2,z2)当且仅当x1<=x2 and y1<=y2 and z1<=z2。求排序为0..n-1的三元组个数。
 **/
 
 #include <cstdio>

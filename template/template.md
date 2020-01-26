@@ -242,6 +242,212 @@ int main()
 }
 ```
 
+### CDQ分治
+
+```c++
+/**
+* Number:p3810
+* Title:【模板】三维偏序（陌上花开）
+* Status:AC
+* Tag:[cdq, 分治, 归并排序]
+* desc:定义三维偏序A(x1,y1,z1)<=B(x2,y2,z2)当且仅当x1<=x2 and y1<=y2 and z1<=z2。求排序为0..n-1的三元组个数。
+**/
+
+const int MAXN = 2e5 + 10; // 最大三元组个数
+const int MAX_DIM = 2; // 第0维排序，只用CDQ分治剩下的两维
+struct Node
+{
+    int v[3], sz, ans;
+} nodes[MAXN];
+pair<Node *, int> buf[4][MAXN];
+void cdq(int beg, int end, int dim)
+{
+    if (end - beg <= 1)
+        return;
+    int mid = (beg + end) >> 1;
+    cdq(beg, mid, dim); // 分治左部的dim维
+    cdq(mid, end, dim); // 分治右部的dim维
+    pair<Node *, int> *cur = buf[dim], *nxt = buf[dim + 1];
+    int i = beg, j = mid, k = beg, cnt = 0;
+    while (i < mid || j < end) // 按照dim维归并排序
+    {
+        if (j == end || i < mid && cur[i].first->v[dim] <= cur[j].first->v[dim])
+        {
+            nxt[k] = cur[i];
+            if (dim == 1 || dim < MAX_DIM && cur[i].second == 1)
+                nxt[k].second = 1; // 标记原来属于左部的元素
+            if (dim == MAX_DIM && nxt[k].second == 1)
+                cnt += nxt[k].first->sz;
+            i++, k++;
+        }
+        else
+        {
+            nxt[k] = cur[j];
+            if (dim == 1 || dim < MAX_DIM && cur[j].second == 2)
+                nxt[k].second = 2; // 标记原来属于右部的元素
+            if (dim == MAX_DIM && nxt[k].second == 2)
+                nxt[k].first->ans += cnt; // 左部比nxt[k]小的三元组有cnt个
+            j++, k++;
+        }
+    }
+    copy(nxt + beg, nxt + end, cur + beg);
+    if (dim < MAX_DIM) cdq(beg, end, dim + 1); // 处理下一维度
+}
+int ans[MAXN];
+int main()
+{
+    int n, k; // 三元组数量，分量最大值
+    readi(n, k);
+    repne(i, 0, n)
+    {
+        readi(nodes[i].v[0], nodes[i].v[1], nodes[i].v[2]); // 读三元组
+        buf[1][i] = make_pair(nodes + i, 0);
+    }
+    pair<Node *, int> *cur = buf[1];
+    sort(cur, cur + n, [](const pair<Node *, int> &lhs, const pair<Node *, int> &rhs) 
+    {
+        int *v1 = lhs.first->v, *v2 = rhs.first->v;
+        if (v1[0] != v2[0])
+            return v1[0] < v2[0];
+        if (v1[1] != v2[1])
+            return v1[1] < v2[1];
+        return v1[2] < v2[2];
+    }); // 第0维排序
+    int tot = 0;
+    for (int i = 0; i < n;)
+    {
+        int cnt = 1;
+        while (
+            i + 1 < n 
+            && cur[i].first->v[0] == cur[i + 1].first->v[0] 
+            && cur[i].first->v[1] == cur[i + 1].first->v[1] 
+            && cur[i].first->v[2] == cur[i + 1].first->v[2])
+        {
+            cnt++, i++;
+        }
+        cur[tot] = cur[i];
+        cur[tot].first->sz = cnt;
+        tot++, i++;
+    }
+    cdq(0, tot, 1); // 分治1、2维
+    repne(i, 0, tot) 
+        ans[cur[i].first->ans + cur[i].first->sz - 1] += cur[i].first->sz;
+    repne(i, 0, n) printf("%d\n", ans[i]);
+    return 0;
+}
+```
+
+
+
+### 整体二分
+
+```c++
+/**
+* Number:p1527
+* Title:[国家集训队]矩阵乘法
+* Status:AC
+* Tag:[整体二分]
+* desc:静态矩阵第k小
+**/
+
+// 二维树状数组模板
+int n, tree[510][510]; // n-方阵的阶数
+inline int lowbit(int x)
+{
+    return x & -x;
+}
+void add(int x, int y, int val)
+{
+    for (int i = x; i <= n; i += lowbit(i))
+        for (int j = y; j <= n; j += lowbit(j))
+            tree[i][j] += val;
+}
+int query(int x, int y)
+{
+    int ans = 0;
+    for (int i = x; i; i ^= lowbit(i))
+        for (int j = y; j; j ^= lowbit(j))
+            ans += tree[i][j];
+    return ans;
+}
+
+struct Node
+{
+    int x, y, val; // 行，列，值
+    bool operator<(const Node &rhs) const
+    {
+        return val < rhs.val;
+    }
+} nodes[510 * 510]; // 按坐标存储矩阵
+struct Query
+{
+    int x1, y1, x2, y2, k, id;
+} querys[60010], ql[60010], qr[60010]; // querys-全部询问，ql/qr-buffer
+int ans[60010], qltail, qrtail;
+// 整体二分，[nbeg,nend)是答案的范围，[qbeg,qend)是询问的范围
+void solve(int nbeg, int nend, int qbeg, int qend)
+{
+    if (qbeg >= qend) // 如果询问为空
+        return;
+    if (nbeg + 1 == nend) // 如果答案已经确定
+    {
+        repne(i, qbeg, qend) ans[querys[i].id] = nodes[nbeg].val;
+        return;
+    }
+    int nmid = (nbeg + nend) >> 1;
+    for (int i = nbeg; i < nmid; i++) // 二分答案，标记前一半元素
+        add(nodes[i].x, nodes[i].y, 1);
+    qltail = qrtail = 0;
+    for (int i = qbeg; i < qend; i++)
+    {
+        Query &q = querys[i];
+        // 统计询问的子矩阵中被标记的元素个数。容斥原理，奇加偶减。
+        int cnt = query(q.x2, q.y2) - query(q.x1 - 1, q.y2) 
+            - query(q.x2, q.y1 - 1) + query(q.x1 - 1, q.y1 - 1);
+        if (cnt >= q.k)
+            ql[qltail++] = q;
+        else
+        {
+            q.k -= cnt;
+            qr[qrtail++] = q;
+        }
+    }
+    int qmid = copy(ql, ql + qltail, querys + qbeg) - querys;
+    copy(qr, qr + qrtail, querys + qmid);
+    for (int i = nbeg; i < nmid; i++) // 还原树状数组
+        add(nodes[i].x, nodes[i].y, -1);
+    solve(nbeg, nmid, qbeg, qmid);
+    solve(nmid, nend, qmid, qend);
+}
+int main()
+{
+    int q;
+    n = read(), q = read(); // 方阵阶数，询问个数
+    int tot = 0;
+    rep2(i, 1, n, j, 1, n)
+    {
+        nodes[tot].x = i, nodes[tot].y = j;
+        nodes[tot++].val = read();
+    }
+    sort(nodes, nodes + tot); // 排序矩阵元素
+    repne(i, 0, q)
+    {
+        Query &t = querys[i];
+        t.x1 = read(), t.y1 = read();
+        t.x2 = read(), t.y2 = read();
+        t.k = read();
+        t.id = i;
+    }
+    solve(0, tot, 0, q); // 整体二分
+    repne(i, 0, q) printf("%d\n", ans[i]);
+    return 0;
+}
+```
+
+
+
+
+
 ### ST表 区间最值查询
 
 ```c++
@@ -2041,6 +2247,115 @@ int main()
     return 0;
 }
 ```
+
+### K-D Tree
+
+```c++
+/**
+* Number:luogu4357
+* Title: [CQOI2016]K远点对
+* Status:AC
+* Tag:[k-d tree, 启发式搜索]
+* desc: 求平面第k远的点对的欧式距离的平方
+**/
+
+const int MAX_DIM = 2; // 问题空间为二维平面
+int dim;               // 当前划分的维度
+
+struct Point
+{
+    int x[MAX_DIM];
+    bool operator<(const Point &rhs) const
+    {
+        return x[dim] < rhs.x[dim];
+    }
+} pos[100010];
+ll dis(const Point &lhs, const Point &rhs) // 欧式距离
+{
+    ll ans = 0;
+    for (int i = 0; i < MAX_DIM; i++)
+        ans += (ll)(lhs.x[i] - rhs.x[i]) * (lhs.x[i] - rhs.x[i]);
+    return ans;
+}
+
+struct Node
+{
+    Point p, ul, br; // p-当前点 ul(br)-划分空间的最小（最大）坐标
+    Node *son[2];    // 左右儿子
+    void pushup()
+    {
+        ul = br = p;
+        for (int d = 0; d < 2; d++)
+        {
+            if (son[d])
+            {
+                for (int i = 0; i < MAX_DIM; i++)
+                {
+                    ul.x[i] = min(ul.x[i], son[d]->ul.x[i]);
+                    br.x[i] = max(br.x[i], son[d]->br.x[i]);
+                }
+            }
+        }
+    }
+} tree[100010], *root, *tail;
+void init()
+{
+    root = tail = tree;
+}
+void build(Node *&u, Point *beg, Point *end, int dep)
+{
+    if (beg >= end)
+        return;
+    dim = dep % MAX_DIM;
+    Point *mid = beg + (end - beg) / 2;
+    nth_element(beg, mid, end);
+    u = tail++;
+    u->p = *mid;
+    build(u->son[0], beg, mid, dep + 1);
+    build(u->son[1], mid + 1, end, dep + 1);
+    u->pushup();
+}
+
+priority_queue<ll, vector<ll>, greater<ll>> topk;
+ll h(const Point &p, const Node *u) // 估计函数：点到u的空间的最大距离
+{
+    return max(
+        max(dis(p, u->ul), dis(p, (Point){u->ul.x[0], u->br.x[1]})),
+        max(dis(p, u->br), dis(p, (Point){u->br.x[0], u->ul.x[1]})));
+}
+void dfs(const Node *u, const Point &p)
+{
+    ll hm = dis(p, u->p);
+    if (hm > topk.top())
+    {
+        topk.pop();
+        topk.push(hm);
+    }
+    for (int i = 0; i < 2; i++)
+    {
+        if (u->son[i] && h(p, u->son[i]) > topk.top())
+        {
+            dfs(u->son[i], p);
+        }
+    }
+}
+
+int main()
+{
+    int n, k; // n个点，求第k远
+    readi(n, k);
+    repne(i, 0, n) readi(pos[i].x[0], pos[i].x[1]);
+    init();
+    build(root, pos, pos + n, 0);
+    repne(i, 0, k << 1) topk.push(0); // 由于对称性，一个点对会被统计两次
+    repne(i, 0, n)
+        dfs(root, pos[i]);
+    printf("%lld\n", topk.top());
+    return 0;
+}
+```
+
+
 
 ### 最近公共祖先 LCA
 
