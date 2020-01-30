@@ -10,7 +10,7 @@
 const double PI = acos(-1);
 
 template<typename T>
-struct Complex
+struct Complex // 复数
 {
     T real, img;
     friend Complex operator+(const Complex& lhs, const Complex& rhs)
@@ -29,30 +29,30 @@ struct Complex
     }
 };
 
-typedef Complex<double> C;
+typedef Complex<double> CD;
 struct FFT
 {
     int r[(1 << 20) + 10];
-    void init(int logn)
+    void init(int logn) // 传入log(项数)
     {
         int n = 1 << logn;
         logn--;
         for(int i = 0; i < n; i++)
             r[i] = (r[i >> 1] >> 1) | ((i & 1) << logn);
     }
-    void operator()(C* poly, int n, int op)
+    void operator()(CD* poly, int n, int op) // 多项式，项数，op=1正变化，-1逆变换
     {
         for(int i = 0; i < n; i++)
             if(i < r[i])std::swap(poly[i], poly[r[i]]);
         for(int i = 1; i < n; i <<= 1)
         {
-            C x = {cos(PI / i), op * sin(PI / i)};
+            CD x = {cos(PI / i), op * sin(PI / i)};
             for(int j = 0; j < n; j += (i << 1))
             {
-                C y = {1, 0};
+                CD y = {1, 0};
                 for(int k = 0; k < i; k++, y = x * y)
                 {
-                    C p = poly[j + k], q = y * poly[i + j + k];
+                    CD p = poly[j + k], q = y * poly[i + j + k];
                     poly[j + k] = p + q;
                     poly[i + j + k] = p - q;
                 }

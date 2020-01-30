@@ -1,6 +1,8 @@
 [TOC]
 
+[TOC]
 
+## Util
 
 ### include & define
 
@@ -129,118 +131,6 @@ void merge_sort(int *begin, int *end) // 传首尾指针，左闭右开区间
 ```
 
 
-
-### 依赖背包
-
-```c++
-/**
-* Number:hdu1561
-* Title:The more, The Better
-* Status:AC
-* Tag:[dp, 树型依赖背包]
-**/
-
-struct Edge
-{
-    int from, to, nxt;
-} edges[1000];
-int head[400], edgeid;
-void addedge(int from, int to)
-{
-    edges[edgeid] = (Edge){from, to, head[from]};
-    head[from] = edgeid++;
-}
-
-int r[400], dp[400][400], sz[400];
-int dfsid, rdfn[400]; // dfs序为i的节点是rdfn[i]
-int dfs(int u)
-{
-    sz[u] = 1;
-    for (int i = head[u]; ~i; i = edges[i].nxt)
-    {
-        int v = edges[i].to;
-        dfs(v);
-        sz[u] += sz[v];
-    }
-    rdfn[++dfsid] = u;
-}
-int main()
-{
-    int n, m; // 物品总数，背包容量
-    while (readi(n, m) != EOF && (n | m))
-    {
-        edgeid = 0;
-        clr(head, -1);
-        rep(i, 1, n)
-        {
-            int a, b; // a-i依赖于a b-物品的价值
-            readi(a, b);
-            addedge(a, i);
-            r[i] = b;
-        }
-        dfsid = 0;
-        dfs(0); // 所有物品依赖于虚拟物品0
-        rep2(i, 1, n + 1, j, 1, m + 1)
-        {
-            int u = rdfn[i];
-            // i - sz[u]: 如果不选u，它的子树都不能选
-            dp[i][j] = max(dp[i - 1][j - 1] + r[u], dp[i - sz[u]][j]);
-        }
-        printf("%d\n", dp[n + 1][m + 1]);
-    }
-    return 0;
-}
-```
-
-### 数位DP
-
-```c++
-/**
-* Number:loj10167
-* Title:「一本通 5.3 练习 2」不要 62
-* Status:AC
-* Tag:[数位dp]
-* desc: 求[a, b]之间不含"4"和"62"的数的个数
-**/
-
-vector<int> num;
-int dp[20][20];
-int dfs(int dep, int pre, bool bound) // 当前填第几个数字，前一个数字，是否到达上界
-{
-    if (dep == -1)
-        return 1;
-    if (!bound && dp[dep][pre] != -1)
-        return dp[dep][pre];
-    int lim = bound ? num[dep] : 9;
-    int ans = 0;
-    rep(i, 0, lim)
-    {
-        if (i == 4 || pre == 6 && i == 2)
-            continue;
-        ans += dfs(dep - 1, i, bound && i == lim);
-    }
-    if (!bound)
-        dp[dep][pre] = ans;
-    return ans;
-}
-int query(int x)
-{
-    num.clear();
-    for (; x; x /= 10)
-        num.push_back(x % 10);
-    return dfs(num.size() - 1, 10, true);
-}
-int main()
-{
-    int a, b;
-    clr(dp, -1);
-    while (readi(a, b) != EOF && a && b)
-    {
-        printf("%d\n", query(b) - query(a - 1));
-    }
-    return 0;
-}
-```
 
 ### CDQ分治
 
@@ -565,7 +455,123 @@ int main()
 }
 ```
 
+## 动态规划
 
+### 树型依赖背包
+
+```c++
+/**
+* Number:hdu1561
+* Title:The more, The Better
+* Status:AC
+* Tag:[dp, 树型依赖背包]
+**/
+
+struct Edge
+{
+    int from, to, nxt;
+} edges[1000];
+int head[400], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = (Edge){from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+int r[400], dp[400][400], sz[400];
+int dfsid, rdfn[400]; // dfs序为i的节点是rdfn[i]
+int dfs(int u)
+{
+    sz[u] = 1;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        dfs(v);
+        sz[u] += sz[v];
+    }
+    rdfn[++dfsid] = u;
+}
+int main()
+{
+    int n, m; // 物品总数，背包容量
+    while (readi(n, m) != EOF && (n | m))
+    {
+        edgeid = 0;
+        clr(head, -1);
+        rep(i, 1, n)
+        {
+            int a, b; // a-i依赖于a b-物品的价值
+            readi(a, b);
+            addedge(a, i);
+            r[i] = b;
+        }
+        dfsid = 0;
+        dfs(0); // 所有物品依赖于虚拟物品0
+        rep2(i, 1, n + 1, j, 1, m + 1)
+        {
+            int u = rdfn[i];
+            // i - sz[u]: 如果不选u，它的子树都不能选
+            dp[i][j] = max(dp[i - 1][j - 1] + r[u], dp[i - sz[u]][j]);
+        }
+        printf("%d\n", dp[n + 1][m + 1]);
+    }
+    return 0;
+}
+```
+
+### 数位DP
+
+```c++
+/**
+* Number:loj10167
+* Title:「一本通 5.3 练习 2」不要 62
+* Status:AC
+* Tag:[数位dp]
+* desc: 求[a, b]之间不含"4"和"62"的数的个数
+**/
+
+vector<int> num;
+int dp[20][20];
+int dfs(int dep, int pre, bool bound) // 当前填第几个数字，前一个数字，是否到达上界
+{
+    if (dep == -1)
+        return 1;
+    if (!bound && dp[dep][pre] != -1)
+        return dp[dep][pre];
+    int lim = bound ? num[dep] : 9;
+    int ans = 0;
+    rep(i, 0, lim)
+    {
+        if (i == 4 || pre == 6 && i == 2)
+            continue;
+        ans += dfs(dep - 1, i, bound && i == lim);
+    }
+    if (!bound)
+        dp[dep][pre] = ans;
+    return ans;
+}
+int query(int x)
+{
+    num.clear();
+    for (; x; x /= 10)
+        num.push_back(x % 10);
+    return dfs(num.size() - 1, 10, true);
+}
+int main()
+{
+    int a, b;
+    clr(dp, -1);
+    while (readi(a, b) != EOF && a && b)
+    {
+        printf("%d\n", query(b) - query(a - 1));
+    }
+    return 0;
+}
+```
+
+
+
+## 数据结构
 
 ### ST表 区间最值查询
 
@@ -593,61 +599,6 @@ ll rmq(int lt, int rt) // 查询区间[lt, rt]的最大值
 ```
 
 
-
-### 并查集/带权并查集
-
-```c++
-/**
-* Number:cf688c
-* Title:NP-Hard Problem
-* Status:AC
-* Tag:[并查集, 二分图判定]
-* desc: 判定一个图是否是二分图，输出左右支的节点
-**/
-
-int fa[100100], rel[100100]; // 父节点，与父节点的关系
-int findr(int x)
-{
-    if (x == fa[x])
-        return x;
-    int rx = findr(fa[x]);
-    rel[x] = rel[x] ^ rel[fa[x]];
-    return fa[x] = rx;
-}
-bool merge(int x, int y, int r)
-{
-    int rx = findr(x), ry = findr(y);
-    if (rx == ry)
-        return (rel[x] ^ rel[y]) == r;
-    rel[rx] = rel[x] ^ rel[y] ^ r;
-    fa[rx] = ry;
-    return true;
-}
-
-int main()
-{
-    int n, m;
-    readi(n, m);            // 节点数，边数
-    rep(i, 1, n) fa[i] = i; // 并查集的初始化
-    while (m--)
-    {
-        int u, v;
-        readi(u, v);         // (u, v)无向边
-        if (!merge(u, v, 1)) // 合并时出现矛盾
-        {
-            puts("-1"); // 不是二分图
-            return 0;
-        }
-    }
-    rep(i, 1, n) findr(i); // 更新fa[]和rel[]
-    int cnt = count(rel + 1, rel + n + 1, 0);
-    printf("%d\n", cnt);
-    rep(i, 1, n) if (rel[i] == 0) printf("%d ", i); // 左支
-    printf("\n%d\n", n - cnt);
-    rep(i, 1, n) if (rel[i] == 1) printf("%d ", i); // 右支
-    return 0;
-}
-```
 
 ### 树状数组 BIT
 
@@ -712,239 +663,6 @@ struct binary_indexed_tree_2d
         return sum;
     }
 };
-```
-
-###  树链剖分+线段树区间操作
-
-```c++
-/**
-* Number:luogu3384
-* Title:树链剖分
-* Status:AC
-* Tag:[树链剖分, 线段树]
-* desc: 树链剖分模板题
-**/
-
-const int MAXN = 1e5 + 10;
-
-struct Edge
-{
-    int from, to, nxt;
-} edges[MAXN << 1];
-int head[MAXN], edgeid;
-void addedge(int from, int to)
-{
-    edges[edgeid] = (Edge){from, to, head[from]};
-    head[from] = edgeid++;
-}
-
-struct QTreeNode // 树链剖分
-{
-    ll val;           // 节点的权值
-    int dep, sz, pos; // 深度、秩、在线段树中的位置
-    int fa, son, top; // 父节点，重儿子，重链顶端节点
-} nodes[MAXN];
-int dfsid = 0;
-int rpos[MAXN];           // 线段树中i位置对应的节点编号为rpos[i]，与pos互逆
-void dfs1(int u, int pre) // u-当前节点 pre-父节点
-{
-    QTreeNode &cur = nodes[u];
-    cur.fa = pre;
-    cur.dep = nodes[pre].dep + 1;
-    int maxsz = cur.sz = 1;
-    for (int i = head[u]; ~i; i = edges[i].nxt)
-    {
-        int v = edges[i].to;
-        if (v == pre)
-            continue;
-        dfs1(v, u);
-        cur.sz += nodes[v].sz;
-        if (nodes[v].sz >= maxsz)
-        {
-            maxsz = nodes[v].sz;
-            cur.son = v;
-        }
-    }
-}
-void dfs2(int u, int top) // u-当前节点 top-重链顶端节点
-{
-    QTreeNode &cur = nodes[u];
-    cur.pos = ++dfsid, rpos[dfsid] = u;
-    cur.top = top;
-    if (cur.son)            // 如果不是叶节点
-        dfs2(cur.son, top); // 先剖重链
-    for (int i = head[u]; ~i; i = edges[i].nxt)
-    {
-        int v = edges[i].to;
-        if (v == cur.fa || v == cur.son)
-            continue;
-        dfs2(v, v); // 再剖轻链
-    }
-}
-
-ll mod;
-struct SegTreeNode // 线段树
-{
-    ll sum, lazy; // 区间和，lazy标记
-} segtree[MAXN << 2];
-void push_up(int p)
-{
-    segtree[p].sum = (segtree[p << 1].sum + segtree[p << 1 | 1].sum) % mod;
-}
-void push_down(int p, int lt, int rt)
-{
-    if (!segtree[p].lazy)
-        return;
-    int lc = p << 1, rc = lc | 1;
-    int mid = (lt + rt) >> 1;
-    segtree[lc].sum = (segtree[lc].sum + segtree[p].lazy * (mid - lt + 1)) % mod;
-    segtree[lc].lazy = (segtree[lc].lazy + segtree[p].lazy) % mod;
-    segtree[rc].sum = (segtree[rc].sum + segtree[p].lazy * (rt - mid)) % mod;
-    segtree[rc].lazy = (segtree[rc].lazy + segtree[p].lazy) % mod;
-    segtree[p].lazy = 0;
-}
-void build(int p, int lt, int rt)
-{
-    if (lt == rt)
-    {
-        segtree[p].sum = nodes[rpos[lt]].val;
-        return;
-    }
-    int mid = (lt + rt) >> 1;
-    build(p << 1, lt, mid);
-    build(p << 1 | 1, mid + 1, rt);
-    push_up(p);
-}
-// 线段树区间修改 qlt-区间左边界 qrt-区间右边界 qval-加多少
-void add_range(int p, int lt, int rt, int qlt, int qrt, ll qval)
-{
-    if (qlt <= lt && rt <= qrt)
-    {
-        segtree[p].sum = (segtree[p].sum + qval * (rt - lt + 1)) % mod;
-        segtree[p].lazy = (segtree[p].lazy + qval) % mod;
-        return;
-    }
-    push_down(p, lt, rt);
-    int lc = p << 1, rc = lc | 1;
-    int mid = (lt + rt) >> 1;
-    if (qlt <= mid)
-        add_range(lc, lt, mid, qlt, qrt, qval);
-    if (mid < qrt)
-        add_range(rc, mid + 1, rt, qlt, qrt, qval);
-    push_up(p);
-}
-// 线段树区间查询 qlt-区间左边界 qrt-区间右边界 返回区间和
-ll query_range(int p, int lt, int rt, int qlt, int qrt)
-{
-    if (qlt <= lt && rt <= qrt)
-        return segtree[p].sum;
-    push_down(p, lt, rt);
-    int lc = p << 1, rc = lc | 1;
-    int mid = (lt + rt) >> 1;
-    ll ans = 0;
-    if (qlt <= mid)
-        ans = query_range(lc, lt, mid, qlt, qrt);
-    if (mid < qrt)
-        ans = (ans + query_range(rc, mid + 1, rt, qlt, qrt)) % mod;
-    return ans;
-}
-// 树链修改 n-节点总数 x,y-链的端点 qval-加多少
-void add_chain(int n, int x, int y, ll qval)
-{
-    int topx = nodes[x].top, topy = nodes[y].top;
-    while (topx != topy) // 如果不在一条链上
-    {
-        if (nodes[topx].dep >= nodes[topy].dep)
-        {
-            add_range(1, 1, n, nodes[topx].pos, nodes[x].pos, qval);
-            x = nodes[topx].fa;
-            topx = nodes[x].top;
-        }
-        else
-        {
-            add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
-            y = nodes[topy].fa;
-            topy = nodes[y].top;
-        }
-    }
-    if (nodes[x].dep > nodes[y].dep)
-        swap(x, y);
-    add_range(1, 1, n, nodes[x].pos, nodes[y].pos, qval);
-}
-// 树链查询 n-节点总数 x,y-链的端点
-ll query_chain(int n, int x, int y)
-{
-    ll ans = 0;
-    int topx = nodes[x].top, topy = nodes[y].top;
-    while (topx != topy)
-    {
-        if (nodes[topx].dep >= nodes[topy].dep)
-        {
-            ans = (ans + query_range(1, 1, n, nodes[topx].pos, nodes[x].pos)) % mod;
-            x = nodes[topx].fa;
-            topx = nodes[x].top;
-        }
-        else
-        {
-            ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
-            y = nodes[topy].fa;
-            topy = nodes[y].top;
-        }
-    }
-    if (nodes[x].dep > nodes[y].dep)
-        swap(x, y);
-    ans = (ans + query_range(1, 1, n, nodes[x].pos, nodes[y].pos)) % mod;
-    return ans;
-}
-
-int main()
-{
-    int n, m, r; // 节点数、询问数、根节点编号
-    readi(n, m, r);
-    scanf("%lld", &mod); // 取模
-    rep(i, 1, n) scanf("%lld", &nodes[i].val);
-    clr(head, -1);
-    repne(i, 1, n) // 建树
-    {
-        int x, y;
-        readi(x, y);
-        addedge(x, y);
-        addedge(y, x);
-    }
-    dfs1(r, 0); // 两遍dfs完成树链剖分
-    dfs2(r, r);
-    build(1, 1, n); // 建线段树
-    while (m--)
-    {
-        int op;
-        readi(op);
-        int x, y;
-        ll z;
-        switch (op)
-        {
-        case 1: // 从x到y的链节点权值加上z
-            readi(x, y);
-            scanf("%lld", &z);
-            add_chain(n, x, y, z);
-            break;
-        case 2: // 查询x到y的链的和
-            readi(x, y);
-            printf("%lld\n", query_chain(n, x, y));
-            break;
-        case 3: // 以x为根的子树节点权值加z
-            readi(x);
-            scanf("%lld", &z);
-            add_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1, z);
-            break;
-        case 4: // 查询以x为根节点的子树的节点权值和
-            readi(x);
-            printf("%lld\n", 
-                   query_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1));
-            break;
-        }
-    }
-    return 0;
-}
 ```
 
 ### 平衡树
@@ -1503,157 +1221,6 @@ struct Scapegoat_Tree
 
 
 
-### 动态树 LCT
-
-```c++
-/**
-* Number:p3690
-* Title:【模板】Link Cut Tree （动态树）
-* Status:AC
-* Tag:[lct, 动态树]
-* desc: lct模板题，维护链上的异或和
-**/
-
-struct Node
-{
-    int val,sum,flip; // 节点的值、子树的异或和、翻转标记
-    int fa,son[2]; // 父节点、左右儿子
-}tree[100010];
-inline int dir(int u)
-{
-    return tree[tree[u].fa].son[1]==u;
-}
-inline void pushup(int u) // 计算要维护的信息
-{
-    int* son=tree[u].son;
-    tree[u].sum=tree[son[0]].sum^tree[son[1]].sum^tree[u].val;
-}
-inline void pushdown(int u) // 下放翻转标记
-{
-    if(!tree[u].flip)return;
-    int* son=tree[u].son;
-    swap(son[0],son[1]);
-    tree[u].flip=0;
-    tree[son[0]].flip^=1;
-    tree[son[1]].flip^=1;
-}
-inline bool isroot(int u) // 判断u是否是根节点
-{
-    int* son=tree[tree[u].fa].son;
-    return son[0]!=u && son[1]!=u;
-}
-inline void rotate(int u)
-{
-    int fa=tree[u].fa, dfa=dir(u);
-    int ffa=tree[fa].fa, dffa=dir(fa);
-    int sub=tree[u].son[dfa^1];
-    tree[u].fa=ffa;
-    if(!isroot(fa))tree[ffa].son[dffa]=u; // 两个SplayTree之间连虚边
-    tree[u].son[dfa^1]=fa, tree[fa].fa=u;
-    tree[fa].son[dfa]=sub, tree[sub].fa=fa;
-    pushup(fa); pushup(u);
-}
-void splay(int u)
-{
-    static int up[100010];
-    int tot=0;
-    for(int i=u;;i=tree[i].fa) // 之上而下释放翻转标记
-    {
-        up[tot++]=i;
-        if(isroot(i))break;
-    }
-    while(tot--)pushdown(up[tot]);
-    while(!isroot(u))
-    {
-        int fa=tree[u].fa;
-        if(!isroot(fa))rotate(dir(u)==dir(fa)?fa:u);
-        rotate(u);
-    }
-}
-void access(int u) // 使根节点-u的链在一棵SplayTree上，u为最深的节点
-{
-    for(int rson=0;u;rson=u,u=tree[u].fa)
-    {
-        splay(u);
-        tree[u].son[1]=rson;
-        pushup(u);
-    }
-}
-void makeroot(int u) // 使u成为根节点
-{
-    access(u);
-    splay(u);
-    tree[u].flip^=1;
-}
-int findroot(int u) // 返回u的根节点
-{
-    access(u);
-    splay(u);
-    while(true)
-    {
-        pushdown(u);
-        if(!tree[u].son[0])return u;
-        u=tree[u].son[0];
-    }
-}
-void split(int x,int y) // 计算链x-y的信息，答案为tree[y].sum
-{                       // split操作后，y无右儿子，y的左儿子为以x为根的子树
-    makeroot(x);
-    access(y);
-    splay(y);
-}
-void link(int x,int y) // 连接x, y两个节点
-{
-    makeroot(x);
-    if(findroot(y)!=x)tree[x].fa=y;
-}
-void cut(int x,int y) // 断开x, y两个节点，不必保证x, y连通
-{
-    split(x,y);
-    if(tree[y].son[0]==x)
-    {
-        tree[x].fa=tree[y].son[0]=0;
-        pushup(y);
-    }
-}
-
-int main()
-{
-    int n,m; readi(n,m); // 节点数、询问数
-    rep(i,1,n) // 输入每个节点的权值
-    {
-        readi(tree[i].val);
-        tree[i].sum=tree[i].val;
-    }
-    while(m--)
-    {
-        int op,x,y; readi(op,x,y);
-        if(op==0) // 链x-y的异或和
-        {
-            split(x,y);
-            printf("%d\n",tree[y].sum);
-        }
-        else if(op==1) // 连接x, y
-        {
-            link(x,y);
-        }
-        else if(op==2) // 断开x, y
-        {
-            cut(x,y);
-        }
-        else if(op==3) // 将节点x的权值修改为y
-        {
-            splay(x);
-            tree[x].val=y;
-            pushup(x);
-        }
-    }
-    return 0;
-}
-```
-
-
-
 ### 树套树
 
 ```c++
@@ -1902,7 +1469,7 @@ int main()
 }
 ```
 
-### 主席树
+### 可持久化线段树
 
 ```c++
 /**
@@ -2474,7 +2041,66 @@ int main()
 }
 ```
 
+### 字典树 Trie
 
+```c++
+struct Trie
+{
+    struct Node
+    {
+        int count; // 当前节点是多少个单词的结尾
+        Node* nxt[26];
+    }nodes[100010];
+    int sz; // 节点总数
+    Node* root; // 根节点
+    Node* createNode()
+    {
+        Node* nod = &nodes[sz++];
+        memset(nod, 0, sizeof(Node));
+        return nod;
+    }
+    void init() // 初始化，清空字典树
+    {
+        sz = 0;
+        root = createNode();
+    }
+    inline int id(char ch) // 字符映射到边
+    {
+        return ch - 'a';
+    }
+    int insert(const char* s) // 插入单词
+    {
+        Node* nod = root;
+        const char* p = s;
+        while(*p)
+        {
+            int v = id(*p);
+            if(!nod->nxt[v])
+            {
+                nod->nxt[v] = createNode();
+            }
+            nod = nod->nxt[v];
+            p++;
+        }
+        return nod->count++;
+    }
+    int find(const char* s) // 查找单词，返回出现次数
+    {
+        Node* nod = root;
+        const char* p = s;
+        while(*p)
+        {
+            int v = id(*p);
+            if(!nod->nxt[v])return 0;
+            nod = nod->nxt[v];
+            p++;
+        }
+        return nod->count;
+    }
+};
+```
+
+## 树
 
 ### 最近公共祖先 LCA
 
@@ -2566,6 +2192,241 @@ int main()
     return 0;
 }
 ```
+
+###  树链剖分
+
+```c++
+/**
+* Number:luogu3384
+* Title:树链剖分
+* Status:AC
+* Tag:[树链剖分, 线段树]
+* desc: 树链剖分模板题
+**/
+
+const int MAXN = 1e5 + 10;
+
+struct Edge
+{
+    int from, to, nxt;
+} edges[MAXN << 1];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = (Edge){from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+struct QTreeNode // 树链剖分
+{
+    ll val;           // 节点的权值
+    int dep, sz, pos; // 深度、秩、在线段树中的位置
+    int fa, son, top; // 父节点，重儿子，重链顶端节点
+} nodes[MAXN];
+int dfsid = 0;
+int rpos[MAXN];           // 线段树中i位置对应的节点编号为rpos[i]，与pos互逆
+void dfs1(int u, int pre) // u-当前节点 pre-父节点
+{
+    QTreeNode &cur = nodes[u];
+    cur.fa = pre;
+    cur.dep = nodes[pre].dep + 1;
+    int maxsz = cur.sz = 1;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        if (v == pre)
+            continue;
+        dfs1(v, u);
+        cur.sz += nodes[v].sz;
+        if (nodes[v].sz >= maxsz)
+        {
+            maxsz = nodes[v].sz;
+            cur.son = v;
+        }
+    }
+}
+void dfs2(int u, int top) // u-当前节点 top-重链顶端节点
+{
+    QTreeNode &cur = nodes[u];
+    cur.pos = ++dfsid, rpos[dfsid] = u;
+    cur.top = top;
+    if (cur.son)            // 如果不是叶节点
+        dfs2(cur.son, top); // 先剖重链
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        if (v == cur.fa || v == cur.son)
+            continue;
+        dfs2(v, v); // 再剖轻链
+    }
+}
+
+ll mod;
+struct SegTreeNode // 线段树
+{
+    ll sum, lazy; // 区间和，lazy标记
+} segtree[MAXN << 2];
+void push_up(int p)
+{
+    segtree[p].sum = (segtree[p << 1].sum + segtree[p << 1 | 1].sum) % mod;
+}
+void push_down(int p, int lt, int rt)
+{
+    if (!segtree[p].lazy)
+        return;
+    int lc = p << 1, rc = lc | 1;
+    int mid = (lt + rt) >> 1;
+    segtree[lc].sum = (segtree[lc].sum + segtree[p].lazy * (mid - lt + 1)) % mod;
+    segtree[lc].lazy = (segtree[lc].lazy + segtree[p].lazy) % mod;
+    segtree[rc].sum = (segtree[rc].sum + segtree[p].lazy * (rt - mid)) % mod;
+    segtree[rc].lazy = (segtree[rc].lazy + segtree[p].lazy) % mod;
+    segtree[p].lazy = 0;
+}
+void build(int p, int lt, int rt)
+{
+    if (lt == rt)
+    {
+        segtree[p].sum = nodes[rpos[lt]].val;
+        return;
+    }
+    int mid = (lt + rt) >> 1;
+    build(p << 1, lt, mid);
+    build(p << 1 | 1, mid + 1, rt);
+    push_up(p);
+}
+// 线段树区间修改 qlt-区间左边界 qrt-区间右边界 qval-加多少
+void add_range(int p, int lt, int rt, int qlt, int qrt, ll qval)
+{
+    if (qlt <= lt && rt <= qrt)
+    {
+        segtree[p].sum = (segtree[p].sum + qval * (rt - lt + 1)) % mod;
+        segtree[p].lazy = (segtree[p].lazy + qval) % mod;
+        return;
+    }
+    push_down(p, lt, rt);
+    int lc = p << 1, rc = lc | 1;
+    int mid = (lt + rt) >> 1;
+    if (qlt <= mid)
+        add_range(lc, lt, mid, qlt, qrt, qval);
+    if (mid < qrt)
+        add_range(rc, mid + 1, rt, qlt, qrt, qval);
+    push_up(p);
+}
+// 线段树区间查询 qlt-区间左边界 qrt-区间右边界 返回区间和
+ll query_range(int p, int lt, int rt, int qlt, int qrt)
+{
+    if (qlt <= lt && rt <= qrt)
+        return segtree[p].sum;
+    push_down(p, lt, rt);
+    int lc = p << 1, rc = lc | 1;
+    int mid = (lt + rt) >> 1;
+    ll ans = 0;
+    if (qlt <= mid)
+        ans = query_range(lc, lt, mid, qlt, qrt);
+    if (mid < qrt)
+        ans = (ans + query_range(rc, mid + 1, rt, qlt, qrt)) % mod;
+    return ans;
+}
+// 树链修改 n-节点总数 x,y-链的端点 qval-加多少
+void add_chain(int n, int x, int y, ll qval)
+{
+    int topx = nodes[x].top, topy = nodes[y].top;
+    while (topx != topy) // 如果不在一条链上
+    {
+        if (nodes[topx].dep >= nodes[topy].dep)
+        {
+            add_range(1, 1, n, nodes[topx].pos, nodes[x].pos, qval);
+            x = nodes[topx].fa;
+            topx = nodes[x].top;
+        }
+        else
+        {
+            add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
+            y = nodes[topy].fa;
+            topy = nodes[y].top;
+        }
+    }
+    if (nodes[x].dep > nodes[y].dep)
+        swap(x, y);
+    add_range(1, 1, n, nodes[x].pos, nodes[y].pos, qval);
+}
+// 树链查询 n-节点总数 x,y-链的端点
+ll query_chain(int n, int x, int y)
+{
+    ll ans = 0;
+    int topx = nodes[x].top, topy = nodes[y].top;
+    while (topx != topy)
+    {
+        if (nodes[topx].dep >= nodes[topy].dep)
+        {
+            ans = (ans + query_range(1, 1, n, nodes[topx].pos, nodes[x].pos)) % mod;
+            x = nodes[topx].fa;
+            topx = nodes[x].top;
+        }
+        else
+        {
+            ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
+            y = nodes[topy].fa;
+            topy = nodes[y].top;
+        }
+    }
+    if (nodes[x].dep > nodes[y].dep)
+        swap(x, y);
+    ans = (ans + query_range(1, 1, n, nodes[x].pos, nodes[y].pos)) % mod;
+    return ans;
+}
+
+int main()
+{
+    int n, m, r; // 节点数、询问数、根节点编号
+    readi(n, m, r);
+    scanf("%lld", &mod); // 取模
+    rep(i, 1, n) scanf("%lld", &nodes[i].val);
+    clr(head, -1);
+    repne(i, 1, n) // 建树
+    {
+        int x, y;
+        readi(x, y);
+        addedge(x, y);
+        addedge(y, x);
+    }
+    dfs1(r, 0); // 两遍dfs完成树链剖分
+    dfs2(r, r);
+    build(1, 1, n); // 建线段树
+    while (m--)
+    {
+        int op;
+        readi(op);
+        int x, y;
+        ll z;
+        switch (op)
+        {
+        case 1: // 从x到y的链节点权值加上z
+            readi(x, y);
+            scanf("%lld", &z);
+            add_chain(n, x, y, z);
+            break;
+        case 2: // 查询x到y的链的和
+            readi(x, y);
+            printf("%lld\n", query_chain(n, x, y));
+            break;
+        case 3: // 以x为根的子树节点权值加z
+            readi(x);
+            scanf("%lld", &z);
+            add_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1, z);
+            break;
+        case 4: // 查询以x为根节点的子树的节点权值和
+            readi(x);
+            printf("%lld\n", 
+                query_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1));
+            break;
+        }
+    }
+    return 0;
+}
+```
+
+
 
 ### 点分治
 
@@ -2679,6 +2540,609 @@ int main()
     return 0;
 }
 ```
+
+### 动态树 LCT
+
+```c++
+/**
+* Number:luogu3690
+* Title:【模板】Link Cut Tree （动态树）
+* Status:AC
+* Tag:[LCT, 动态树]
+* desc: LCT模板题，维护链上的异或和
+**/
+
+struct Node
+{
+    int val,sum,flip; // 节点的值、子树的异或和、翻转标记
+    int fa,son[2]; // 父节点、左右儿子
+}tree[100010];
+inline int dir(int u)
+{
+    return tree[tree[u].fa].son[1]==u;
+}
+inline void pushup(int u) // 计算要维护的信息
+{
+    int* son=tree[u].son;
+    tree[u].sum=tree[son[0]].sum^tree[son[1]].sum^tree[u].val;
+}
+inline void pushdown(int u) // 下放翻转标记
+{
+    if(!tree[u].flip)return;
+    int* son=tree[u].son;
+    swap(son[0],son[1]);
+    tree[u].flip=0;
+    tree[son[0]].flip^=1;
+    tree[son[1]].flip^=1;
+}
+inline bool isroot(int u) // 判断u是否是根节点
+{
+    int* son=tree[tree[u].fa].son;
+    return son[0]!=u && son[1]!=u;
+}
+inline void rotate(int u)
+{
+    int fa=tree[u].fa, dfa=dir(u);
+    int ffa=tree[fa].fa, dffa=dir(fa);
+    int sub=tree[u].son[dfa^1];
+    tree[u].fa=ffa;
+    if(!isroot(fa))tree[ffa].son[dffa]=u; // 两个SplayTree之间连虚边
+    tree[u].son[dfa^1]=fa, tree[fa].fa=u;
+    tree[fa].son[dfa]=sub, tree[sub].fa=fa;
+    pushup(fa); pushup(u);
+}
+void splay(int u)
+{
+    static int up[100010];
+    int tot=0;
+    for(int i=u;;i=tree[i].fa) // 之上而下释放翻转标记
+    {
+        up[tot++]=i;
+        if(isroot(i))break;
+    }
+    while(tot--)pushdown(up[tot]);
+    while(!isroot(u))
+    {
+        int fa=tree[u].fa;
+        if(!isroot(fa))rotate(dir(u)==dir(fa)?fa:u);
+        rotate(u);
+    }
+}
+void access(int u) // 使根节点-u的链在一棵SplayTree上，u为最深的节点
+{
+    for(int rson=0;u;rson=u,u=tree[u].fa)
+    {
+        splay(u);
+        tree[u].son[1]=rson;
+        pushup(u);
+    }
+}
+void makeroot(int u) // 使u成为根节点
+{
+    access(u);
+    splay(u);
+    tree[u].flip^=1;
+}
+int findroot(int u) // 返回u的根节点
+{
+    access(u);
+    splay(u);
+    while(true)
+    {
+        pushdown(u);
+        if(!tree[u].son[0])return u;
+        u=tree[u].son[0];
+    }
+}
+void split(int x,int y) // 计算链x-y的信息，答案为tree[y].sum
+{                       // split操作后，y无右儿子，y的左儿子为以x为根的子树
+    makeroot(x);
+    access(y);
+    splay(y);
+}
+void link(int x,int y) // 连接x, y两个节点
+{
+    makeroot(x);
+    if(findroot(y)!=x)tree[x].fa=y;
+}
+void cut(int x,int y) // 断开x, y两个节点，不必保证x, y连通
+{
+    split(x,y);
+    if(tree[y].son[0]==x)
+    {
+        tree[x].fa=tree[y].son[0]=0;
+        pushup(y);
+    }
+}
+
+int main()
+{
+    int n,m; readi(n,m); // 节点数、询问数
+    rep(i,1,n) // 输入每个节点的权值
+    {
+        readi(tree[i].val);
+        tree[i].sum=tree[i].val;
+    }
+    while(m--)
+    {
+        int op,x,y; readi(op,x,y);
+        if(op==0) // 链x-y的异或和
+        {
+            split(x,y);
+            printf("%d\n",tree[y].sum);
+        }
+        else if(op==1) // 连接x, y
+        {
+            link(x,y);
+        }
+        else if(op==2) // 断开x, y
+        {
+            cut(x,y);
+        }
+        else if(op==3) // 将节点x的权值修改为y
+        {
+            splay(x);
+            tree[x].val=y;
+            pushup(x);
+        }
+    }
+    return 0;
+}
+```
+
+
+
+## 图
+
+### 并查集/带权并查集
+
+```c++
+/**
+* Number:cf688c
+* Title:NP-Hard Problem
+* Status:AC
+* Tag:[并查集, 二分图判定]
+* desc: 判定一个图是否是二分图，输出左右支的节点
+**/
+
+int fa[100100], rel[100100]; // 父节点，与父节点的关系
+int findr(int x)
+{
+    if (x == fa[x])
+        return x;
+    int rx = findr(fa[x]);
+    rel[x] = rel[x] ^ rel[fa[x]];
+    return fa[x] = rx;
+}
+bool merge(int x, int y, int r)
+{
+    int rx = findr(x), ry = findr(y);
+    if (rx == ry)
+        return (rel[x] ^ rel[y]) == r;
+    rel[rx] = rel[x] ^ rel[y] ^ r;
+    fa[rx] = ry;
+    return true;
+}
+
+int main()
+{
+    int n, m;
+    readi(n, m);            // 节点数，边数
+    rep(i, 1, n) fa[i] = i; // 并查集的初始化
+    while (m--)
+    {
+        int u, v;
+        readi(u, v);         // (u, v)无向边
+        if (!merge(u, v, 1)) // 合并时出现矛盾
+        {
+            puts("-1"); // 不是二分图
+            return 0;
+        }
+    }
+    rep(i, 1, n) findr(i); // 更新fa[]和rel[]
+    int cnt = count(rel + 1, rel + n + 1, 0);
+    printf("%d\n", cnt);
+    rep(i, 1, n) if (rel[i] == 0) printf("%d ", i); // 左支
+    printf("\n%d\n", n - cnt);
+    rep(i, 1, n) if (rel[i] == 1) printf("%d ", i); // 右支
+    return 0;
+}
+```
+
+### 最短路
+
+#### Dijkstra
+
+```c++
+/**
+* Number:luogu4779
+* Title:【模板】单源最短路径（标准版）
+* Status:AC
+* Tag:[dijkstra]
+**/
+
+const int MAXN = 1e5 + 10;
+const int MAXM = 2e5 + 10;
+struct Edge
+{
+    int from, to;
+    ll dis;
+    int nxt;
+} edges[MAXM]; // 图的存储：链式前向星
+int head[MAXN], edgeid;
+void addedge(int from, int to, ll dis) // 添加从from到to、长度为dis的有向边
+{
+    edges[edgeid] = {from, to, dis, head[from]};
+    head[from] = edgeid++;
+}
+
+struct HeapNode
+{
+    int pos; // 当前位置
+    ll cost; // 到达这个位置的花费
+    bool operator<(const HeapNode &rhs) const
+    {
+        return cost > rhs.cost;
+    }
+};
+ll dis[MAXN];
+void dijkstra(int src) // 求src到所有点的最短路，答案保存在dis[]
+{
+    priority_queue<HeapNode> Q;
+    Q.push({src, 0});
+    clr(dis, INF), dis[src] = 0;
+    while (!Q.empty())
+    {
+        HeapNode cur = Q.top();
+        Q.pop();
+        if (cur.cost != dis[cur.pos])
+            continue;
+        for (int i = head[cur.pos]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i];
+            if (cur.cost + e.dis < dis[e.to])
+            {
+                dis[e.to] = cur.cost + e.dis;
+                Q.push({e.to, dis[e.to]});
+            }
+        }
+    }
+}
+
+int main()
+{
+    int n, m, s; // 点数，边数，起点
+    readi(n, m, s);
+    edgeid = 0, fill_n(head, n + 1, -1); // 链式前向星的初始化
+    rep(i, 1, m)
+    {
+        int u, v, w;
+        readi(u, v, w);
+        addedge(u, v, w);
+    }
+    dijkstra(s);
+    rep(i, 1, n) printf("%lld ", dis[i]);
+    return 0;
+}
+```
+
+#### SPFA BFS版
+
+```c++
+// luogu4779 SPFA解法
+ll dis[MAXN];
+bool vis[MAXN];
+void spfa(int src)
+{
+    queue<int> Q;
+    Q.push(src);
+    clr(dis, INF), dis[src] = 0;
+    while (!Q.empty())
+    {
+        int u = Q.front();
+        Q.pop();
+        vis[u] = false;
+        for (int i = head[u]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i];
+            if (dis[u] + e.dis >= dis[e.to])
+                continue;
+            dis[e.to] = dis[u] + e.dis;
+            if (!vis[e.to])
+            {
+                Q.push(e.to); // 如果一个点入队超过n次，则存在负环
+                vis[e.to] = true;
+            }
+        }
+    }
+}
+```
+
+####  SPFA DFS版判负环
+
+```c++
+int n, dis[510];
+bool vis[510];
+bool spfa(int u)
+{
+    vis[u]=true;
+    bool ans=false;
+    for(int i=head[u];~i;i=nxt[i])
+    {
+        int v=edges[i].to;
+        int c=edges[i].dis;
+        if(dis[u]+c<dis[v])
+        {
+            dis[v]=dis[u]+c;
+            if(vis[v] || spfa(v))
+            {
+                ans=true;
+                break;
+            }
+        }
+    }
+    vis[u]=false;
+    return ans;
+}
+bool check() // 存在负环返回true
+{
+    std::fill(vis, vis+n+1, false);
+    std::fill(dis, dis+n+1, 0);
+    for(int i=1;i<=n;i++)if(spfa(i))return true;
+    return false;
+}
+```
+
+
+
+#### Floyd
+
+```c++
+ll adj[510][510]; // 邻接矩阵，下标从1开始
+void floyd(int n) // 求任意两点的最短路，n为点的个数
+{
+    for(int k = 1; k <= n; k++)
+        for(int i = 1; i <= n; i++)
+            for(int j = 1; j <= n; j++)
+                adj[i][j] = min(adj[i][j], adj[i][k] + adj[k][j]);
+}
+```
+
+
+
+### 最小生成树
+
+#### Kruskal
+
+```c++
+/**
+* Number:p3366
+* Title:【模板】最小生成树
+* Status:AC
+* Tag:[mst, 最小生成树, kruskal]
+**/
+
+const int MAXN = 5e3 + 10;
+const int MAXM = 2e5 + 10;
+struct Edge
+{
+    int u, v, w;
+    bool operator<(const Edge &rhs) const
+    {
+        return w < rhs.w;
+    }
+} edges[MAXM]; // 无向图
+
+int fa[MAXN]; // 并查集模板
+int findr(int x)
+{
+    return x == fa[x] ? x : fa[x] = findr(fa[x]);
+}
+bool merge(int x, int y)
+{
+    int rx = findr(x), ry = findr(y);
+    if (rx == ry)
+        return false;
+    fa[rx] = ry;
+    return true;
+}
+
+int kruskal(int n, int m) // 有解返回MST的权值，无解返回-1
+{
+    sort(edges, edges + m);
+    int cnt = 1, ans = 0;
+    repne(i, 0, m)
+    {
+        Edge &e = edges[i];
+        if (merge(e.u, e.v))
+            ans += e.w, cnt++;
+    }
+    return cnt == n ? ans : -1;
+}
+
+int main()
+{
+    int n, m; readi(n, m); // 点数，边数
+    repne(i, 0, m) readi(edges[i].u, edges[i].v, edges[i].w);
+    iota(fa + 1, fa + n + 1, 1); // 并查集初始化
+    int ans = kruskal(n, m);
+    if (ans != -1) printf("%d", ans);
+    else printf("orz");
+    return 0;
+}
+```
+
+#### Prim
+
+```c++
+// luogu3366 Prim解法
+struct Edge
+{
+    int from, to, w, nxt;
+} edges[MAXM * 2]; // 双向边
+int head[MAXN], edgeid;
+void addedge(int from, int to, int w)
+{
+    edges[edgeid] = {from, to, w, head[from]};
+    head[from] = edgeid++;
+}
+void addedge2(int u, int v, int w)
+{
+    addedge(u, v, w);
+    addedge(v, u, w);
+}
+
+struct HeapNode
+{
+    int id, dis;
+    bool operator<(const HeapNode &rhs) const
+    {
+        return dis > rhs.dis;
+    }
+};
+bool vis[MAXN];
+int prim(int n)
+{
+    priority_queue<HeapNode> Q;
+    for (int i = head[1]; ~i; i = edges[i].nxt)
+        Q.push({i, edges[i].w});
+    fill_n(vis, n + 1, false), vis[1] = true;
+    int cnt = 1, ans = 0;
+    while (!Q.empty())
+    {
+        HeapNode node = Q.top();
+        Q.pop();
+        int u = edges[node.id].to;
+        if (vis[u])
+            continue;
+        ans += node.dis;
+        vis[u] = true, cnt++;
+        for (int i = head[u]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i];
+            if (!vis[e.to])
+                Q.push({i, e.w});
+        }
+    }
+    return cnt == n ? ans : -1;
+}
+
+int main()
+{
+    int n, m; readi(n, m);
+    edgeid = 0, fill_n(head, n + 1, -1); // 链式前向星的初始化
+    rep(i, 1, m)
+    {
+        int u, v, w;
+        readi(u, v, w);
+        addedge2(u, v, w);
+    }
+    int ans = prim(n);
+    if (ans != -1) printf("%d", ans);
+    else printf("orz");
+    return 0;
+}
+```
+
+
+
+### 单连通分量 2-SAT Tarjan
+
+```c++
+/**
+* Number:loj10097
+* Title:「一本通 3.5 练习 5」和平委员会
+* Status:AC
+* Tag:[2-sat, tarjan]
+* desc: n个党派，2n个代表，2i-1和2i属于一个党派，m对代表不能共存，输出每个党派选一名代表的方案
+**/
+
+#include <cstdio>
+#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <vector>
+#include <queue>
+#include <stack>
+using namespace std;
+
+const int MAXN = 8010 * 4;
+const int MAXM = 2e6 + 10;
+struct Edge
+{
+    int from, to, nxt;
+} edges[MAXM];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = (Edge){from, to, head[from]};
+    head[from] = edgeid++;
+}
+void addedge2(int u, int v)
+{
+    addedge(u, v);
+    addedge(v, u);
+}
+
+int dfn[MAXN], low[MAXN], dfsid; // dfs序，dfs树上可以连接的最小节点
+int grp[MAXN], grpid;            // 节点的分组号，是逆拓扑序
+stack<int> trace;                // 当前dfs路径
+void tarjan(int u)
+{
+    dfn[u] = low[u] = ++dfsid;
+    trace.push(u);
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        if (!dfn[v])
+            tarjan(v); // 如果v没有计算过，先tarjan点v
+        if (!grp[v])
+            low[u] = min(low[u], low[v]);
+    }
+    if (dfn[u] == low[u]) // u是强联通分量的根节点
+    {
+        grp[u] = ++grpid;
+        while (trace.top() != u)
+        {
+            grp[trace.top()] = grpid;
+            trace.pop();
+        }
+        trace.pop();
+    }
+}
+
+int main()
+{
+    int n, m; readi(n, m); // 点数，边数
+    clr(head, -1);
+    repne(i, 0, m)
+    {
+        int u, v;
+        readi(u, v); // u与v有矛盾
+        u--, v--;
+        // u-选u u^1-选u的对立面
+        // u->v表示如果选u则一定要选v
+        addedge(u, v ^ 1);
+        addedge(v, u ^ 1);
+    }
+    rep(i, 1, n << 1) if (!dfn[i]) tarjan(i);
+    rep(i, 1, n << 1)
+    {
+        if (grp[i] == grp[i ^ 1]) // 矛盾
+        {
+            printf("NIE");
+            return 0;
+        }
+    }
+    rep(i, 1, n << 1) if (grp[i] < grp[i ^ 1])
+        // (i^1)->(i)，选了(i^1)就必须选(i)，那么只能选i
+        printf("%d\n", i);
+    return 0;
+}
+```
+
+
 
 ### 最大匹配/最小点覆盖 Hungary
 
@@ -2877,87 +3341,87 @@ int hopcroft_karp() // 返回最大匹配数
 
 ```c++
 /**
-* Number:uva11383
-* Title:Golden Tiger Claw
+* Number:hdu6346
+* Title:整数规划
 * Status:AC
-* Tag:[二分图, km, 完美匹配]
-* desc: 已知方阵M，求min{sum(r[i])+sum(c[j])} s.t. M[i][j]<=r[i]+c[j]
+* Tag:[KM, 二分图, 最大完备匹配]
+* desc: n阶方阵a[i][j]，求max(sum(x[i])+sum(y[i])) s.t. x[i]+y[j]<=a[i][j]
 **/
 
-const int MAXN = 510;
-
-int n, adj[MAXN][MAXN];      // 方阵阶数，邻接矩阵
-bool visx[MAXN], visy[MAXN]; // dfs是否访问到
-int lx[MAXN], ly[MAXN];      // 左右支节点的期望权值，即所求的r[]、c[]
-int lef[MAXN];               // 右支的节点在左支的匹配点
-bool dfs(int u)              // 匈牙利算法中的増广
+const int MAXN = 210;
+int n;                 // 邻接矩阵大小
+ll adj[MAXN][MAXN];    // 邻接矩阵
+ll lx[MAXN], ly[MAXN]; // 顶标，满足lx[u]+ly[v]==adj[u][v]
+ll slack[MAXN];
+bool visy[MAXN];
+int pre[MAXN];
+int match[MAXN];      // 与右侧v匹配的是match[v]
+void augment(int src) // BFS増广
 {
-    visx[u] = true;
-    rep(v, 1, n)
+    fill_n(visy, n + 1, false);
+    fill_n(slack, n + 1, INF);
+    int y = 0;
+    match[0] = src;
+    do
     {
-        if (visy[v] || lx[u] + ly[v] != adj[u][v])
-            continue;
-        visy[v] = true;
-        if (!lef[v] || dfs(lef[v]))
+        visy[y] = true;
+        int u = match[y], tmpy;
+        ll delta = INF;
+        for (int v = 1; v <= n; v++)
         {
-            lef[v] = u;
-            return true;
+            if (visy[v])
+                continue;
+            if (lx[u] + ly[v] - adj[u][v] < slack[v])
+                slack[v] = lx[u] + ly[v] - adj[u][v], pre[v] = y;
+            if (slack[v] < delta)
+                delta = slack[v], tmpy = v;
         }
-    }
-    return false;
+        for (int v = 0; v <= n; v++)
+        {
+            if (visy[v])
+                lx[match[v]] -= delta, ly[v] += delta;
+            else
+                slack[v] -= delta;
+        }
+        y = tmpy;
+    } while (~match[y]);
+    for (; y; y = pre[y])
+        match[y] = match[pre[y]];
 }
-void update()
+ll km() // 返回最大匹配权值，match为匹配结果
 {
-    int delta = INF;
-    rep(i, 1, n) if (visx[i])
-        rep(j, 1, n) if (!visy[j])
-            delta = min(delta, lx[i] + ly[j] - adj[i][j]);
-    rep(i, 1, n)
-    {
-        if (visx[i])
-            lx[i] -= delta;
-        if (visy[i])
-            ly[i] += delta;
-    }
-}
-int km() // KM算法，返回最佳完美匹配权值
-{
-    clr(lef, 0);
-    clr(ly, false);
     rep(i, 1, n) lx[i] = *max_element(adj[i] + 1, adj[i] + n + 1);
-    rep(i, 1, n)
-    {
-        while (true)
-        {
-            clr(visx, false);
-            clr(visy, false);
-            if (dfs(i))
-                break;
-            update();
-        }
-    }
-    int ans = 0;
+    fill_n(ly, n + 1, 0);
+    fill_n(match, n + 1, -1);
+    rep(i, 1, n) augment(i);
+    ll ans = 0;
     rep(i, 1, n) ans += lx[i] + ly[i];
     return ans;
 }
 
 int main()
 {
-    while (readi(n) != EOF)
+    int T; readi(T);
+    rep(kase, 1, T)
     {
-        rep2(i, 1, n, j, 1, n) readi(adj[i][j]); // 输入的矩阵即为邻接矩阵
-        int ans = km();
-        rep(i, 1, n) printf("%d ", lx[i]); // r[]
-        puts("");
-        rep(i, 1, n) printf("%d ", ly[i]); // c[]
-        puts("");
-        printf("%d\n", ans); // min(sum(r[i])+sum(c[j]))
+        readi(n); // 方阵阶数
+        rep2(i, 1, n, j, 1, n)
+        {
+            int w; readi(w);
+            adj[i][j] = -w; // 取反，求最小匹配
+        }
+        ll ans = km();
+        printf("Case #%d: %lld\n", kase, -ans);
     }
     return 0;
 }
 ```
 
-### 网络流 最大流 Dinic ISAP
+
+
+### 网络流 最大流
+
+#### Dinic
 
 ```c++
 /**
@@ -2982,7 +3446,6 @@ void addedge(int from, int to, int flow)
     head[from] = edgeid++;
 }
 
-// Dinic算法
 int dep[MAXN], cur[MAXN]; // 分层，当前弧
 bool bfs(int src, int dst)
 {
@@ -3042,13 +3505,14 @@ int main()
         addedge(a, b, f); addedge(b, a, 0); // 双向边
     }
     printf("%d\n", dinic(n, s, t));
-    // printf("%d\n", isap(n, s, t));
+    // printf("%d\n", isap(n, s, t)); // 算法模板见下面，调用方式与Dinic一致
     return 0;
 }
 ```
 
+#### ISAP
+
 ```c++
-// ISAP算法
 int dep[MAXN], cur[MAXN], num[MAXN], pre[MAXN];
 void bfs(int n, int dst)
 {
@@ -3127,6 +3591,10 @@ ll isap(int n, int src, int dst)
     return ans;
 }
 ```
+
+
+
+
 
 ### 最小费用最大流
 
@@ -3216,104 +3684,13 @@ int main()
 }
 ```
 
-### 单连通分量 2-SAT Tarjan
+### 带上下界的网络流
 
-```c++
-/**
-* Number:loj10097
-* Title:「一本通 3.5 练习 5」和平委员会
-* Status:AC
-* Tag:[2-sat, tarjan]
-* desc: n个党派，2n个代表，2i-1和2i属于一个党派，m对代表不能共存，输出每个党派选一名代表的方案
-**/
 
-#include <cstdio>
-#include <iostream>
-#include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <vector>
-#include <queue>
-#include <stack>
-using namespace std;
 
-const int MAXN = 8010 * 4;
-const int MAXM = 2e6 + 10;
-struct Edge
-{
-    int from, to, nxt;
-} edges[MAXM];
-int head[MAXN], edgeid;
-void addedge(int from, int to)
-{
-    edges[edgeid] = (Edge){from, to, head[from]};
-    head[from] = edgeid++;
-}
-void addedge2(int u, int v)
-{
-    addedge(u, v);
-    addedge(v, u);
-}
+## 字符串
 
-int dfn[MAXN], low[MAXN], dfsid; // dfs序，dfs树上可以连接的最小节点
-int grp[MAXN], grpid;            // 节点的分组号，是逆拓扑序
-stack<int> trace;                // 当前dfs路径
-void tarjan(int u)
-{
-    dfn[u] = low[u] = ++dfsid;
-    trace.push(u);
-    for (int i = head[u]; ~i; i = edges[i].nxt)
-    {
-        int v = edges[i].to;
-        if (!dfn[v])
-            tarjan(v); // 如果v没有计算过，先tarjan点v
-        if (!grp[v])
-            low[u] = min(low[u], low[v]);
-    }
-    if (dfn[u] == low[u]) // u是强联通分量的根节点
-    {
-        grp[u] = ++grpid;
-        while (trace.top() != u)
-        {
-            grp[trace.top()] = grpid;
-            trace.pop();
-        }
-        trace.pop();
-    }
-}
-
-int main()
-{
-    int n, m;
-    readi(n, m); // 点数，边数
-    clr(head, -1);
-    repne(i, 0, m)
-    {
-        int u, v;
-        readi(u, v); // u与v有矛盾
-        u--, v--;
-        // u-选u u^1-选u的对立面
-        // u->v表示如果选u则一定要选v
-        addedge(u, v ^ 1);
-        addedge(v, u ^ 1);
-    }
-    rep(i, 1, n << 1) if (!dfn[i]) tarjan(i);
-    rep(i, 1, n << 1)
-    {
-        if (grp[i] == grp[i ^ 1]) // 矛盾
-        {
-            printf("NIE");
-            return 0;
-        }
-    }
-    rep(i, 1, n << 1) if (grp[i] < grp[i ^ 1])
-        // (i^1)->(i)，选了(i^1)就必须选(i)，那么只能选i
-        printf("%d\n", i);
-    return 0;
-}
-```
-
-### 字符串哈希
+### Hash
 
 ```c++
 struct string_hash
@@ -3334,7 +3711,7 @@ struct string_hash
     {
         return hashc[rt] - hashc[lt - 1] * powb[rt - lt + 1];
     }
-    ull concat(int lt1, int rt1, int lt2, int rt2) //s[lt1 : rt1] + s[lt2 : rt2]的哈希值
+    ull concat(int lt1, int rt1, int lt2, int rt2) //s[lt1:rt1] + s[lt2:rt2]的哈希值
     {
         if (lt1 > rt1 && lt2 > rt2)
             return 0ULL;
@@ -3474,65 +3851,6 @@ struct manacher
             }
             palin[i] = rt - i;
         }
-    }
-};
-```
-
-### 字典树 Trie
-
-```c++
-struct Trie
-{
-    struct Node
-    {
-        int count; // 当前节点是多少个单词的结尾
-        Node* nxt[26];
-    }nodes[100010];
-    int sz; // 节点总数
-    Node* root; // 根节点
-    Node* createNode()
-    {
-        Node* nod = &nodes[sz++];
-        memset(nod, 0, sizeof(Node));
-        return nod;
-    }
-    void init() // 初始化，清空字典树
-    {
-        sz = 0;
-        root = createNode();
-    }
-    inline int id(char ch) // 字符映射到边
-    {
-        return ch - 'a';
-    }
-    int insert(const char* s) // 插入单词
-    {
-        Node* nod = root;
-        const char* p = s;
-        while(*p)
-        {
-            int v = id(*p);
-            if(!nod->nxt[v])
-            {
-                nod->nxt[v] = createNode();
-            }
-            nod = nod->nxt[v];
-            p++;
-        }
-        return nod->count++;
-    }
-    int find(const char* s) // 查找单词，返回出现次数
-    {
-        Node* nod = root;
-        const char* p = s;
-        while(*p)
-        {
-            int v = id(*p);
-            if(!nod->nxt[v])return 0;
-            nod = nod->nxt[v];
-            p++;
-        }
-        return nod->count;
     }
 };
 ```
@@ -3705,7 +4023,7 @@ int main()
 }
 ```
 
-
+## 数学
 
 ### 高斯消元
 
@@ -3759,7 +4077,9 @@ struct gauss_elimination
 };
 ```
 
-### 计算几何
+## 计算几何
+
+#### 通用
 
 ```c++
 const double eps = 1e-8; // 精度
@@ -3782,13 +4102,13 @@ inline double degToRad(double ang)
 {
     return ang / 180. * PI;
 }
+```
 
-/************************************************************
- * 
- * 点, 向量
- * 
-************************************************************/
 
+
+#### 点 向量
+
+```c++
 struct Vector
 {
     double x, y;
@@ -3897,14 +4217,11 @@ inline Vector rotate(const Vector& v, double theta)
     double s = sin(theta), c = cos(theta);
     return Vector(v.x * c - v.y * s, v.x * s + v.y * c);
 }
+```
 
+#### 直线 线段
 
-/************************************************************
- * 
- * 直线, 线段
- * 
-************************************************************/
-
+```c++
 struct Line
 {
     Point p1, p2;
@@ -4045,14 +4362,11 @@ Point intersect(const Line& lhs, const Line& rhs)
     double d = a1 * b2 - a2 * b1;
     return Point((b1 * c2 - b2 * c1) / d, (c1 * a2 - c2 * a1) / d);
 }
+```
 
+#### 多边形 凸包
 
-/************************************************************
- * 
- * 多边形, 凸包
- * 
-************************************************************/
-
+```c++
 typedef std::vector<Point> Polygen;
 
 // 多边形的周长
@@ -4168,14 +4482,11 @@ int position(const Polygen& lhs, const Polygen& rhs)
     }
     return 1;
 }
+```
 
+#### 圆
 
-/************************************************************
- * 
- * 圆
- * 
-************************************************************/
-
+```c++
 struct Circle
 {
     Point c; // 圆心
@@ -4288,11 +4599,15 @@ int tangent(Circle A, Circle B, Point* a, Point* b)
     {
         a[cnt] = getPoint(A, base); b[cnt] = getPoint(B, PI+base); cnt++;
     }
-    else if(d2>rsum * rsum) // two
+    else if(d2 > rsum * rsum) // two
     {
         double ang = acos((A.r - B.r) / sqrt(d2));
-        a[cnt] = getPoint(A, base + ang); b[cnt] = getPoint(B, PI + base+ang); cnt++;
-        a[cnt] = getPoint(A, base - ang); b[cnt] = getPoint(B, PI+base - ang); cnt++;
+        a[cnt] = getPoint(A, base + ang);
+        b[cnt] = getPoint(B, PI + base+ang);
+        cnt++;
+        a[cnt] = getPoint(A, base - ang);
+        b[cnt] = getPoint(B, PI+base - ang);
+        cnt++;
     }
     return cnt;
 }
@@ -4321,6 +4636,8 @@ Circle InscribedCircle(const Point& p1, const Point& p2, const Point& p3)
 ```
 
 
+
+## C++ STL
 
 ### regex
 
