@@ -2,111 +2,87 @@
 * Number:p3366
 * Title:【模板】最小生成树
 * Status:AC
-* Tag:[mst, 最小生成树]
+* Tag:[mst, 最小生成树, kruskal]
 **/
 
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
-#define PI acos(-1)
-typedef int ll;
+typedef long long ll;
+typedef unsigned long long ull;
 
-#define readi(i1) scanf("%d", &i1)
-#define readi2(i1, i2) scanf("%d %d", &i1, &i2)
-#define readi3(i1, i2, i3) scanf("%d %d %d", &i1, &i2, &i3)
-#define readi4(i1, i2, i3, i4) scanf("%d %d %d %d", &i1, &i2, &i3, &i4)
-#define reads(s1) scanf("%s", s1)
-#define mset(mem, val) memset(mem, val, sizeof(mem))
-#define rep(i, begin, end) for (int i = (begin); i <= (end); i++)
+inline int readi(int &i1) { return scanf("%d", &i1); }
+inline int readi(int &i1, int &i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int &i1, int &i2, int &i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int &i1, int &i2, int &i3, int &i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char *s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
 #define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
-#define repne(i, begin, end) for (int i = (begin); i < (end); i++)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
 const int MAXN = 5e3 + 10;
 const int MAXM = 2e5 + 10;
-
-struct directed_graph
+struct Edge
 {
-    struct edge
-    {
-        int from, to;
-        ll weight;
-        bool operator<(const edge &rhs) const
-        {
-            return weight < rhs.weight;
-        }
-    } edges[MAXM];
-    int head[MAXN], nxt[MAXM];
-    int n_node; // 顶点数
-    int n_edge; // 边数
-    void clear(int n_node)
-    {
-        this->n_node = n_node;
-        this->n_edge = 0;
-        std::memset(head + 1, -1, sizeof(int) * n_node);
-    }
-    void add_edge(int from, int to, ll weight)
-    {
-        edge &e = edges[n_edge];
-        e.from = from;
-        e.to = to;
-        e.weight = weight;
-        nxt[n_edge] = head[from];
-        head[from] = n_edge++;
-    }
-} G;
-
-struct union_find_set
+    int from, to, w, nxt;
+} edges[MAXM * 2]; // 双向边
+int head[MAXN], edgeid;
+void addedge(int from, int to, int w)
 {
-    int fa[MAXN];
-    void clear(int n)
+    edges[edgeid] = {from, to, w, head[from]};
+    head[from] = edgeid++;
+}
+void addedge2(int u, int v, int w)
+{
+    addedge(u, v, w);
+    addedge(v, u, w);
+}
+
+struct HeapNode
+{
+    int id, dis;
+    bool operator<(const HeapNode &rhs) const
     {
-        for(int i = 1; i <= n; i++)
-            fa[i] = i;
-    }
-    int find_root(int x)
-    {
-        return x == fa[x] ? x : fa[x] = find_root(fa[x]);
-    }
-    bool merge(int x, int y)
-    {
-        int rx = find_root(x), ry = find_root(y);
-        if(rx == ry)return false;
-        fa[rx] = ry;
-        return true;
+        return dis > rhs.dis;
     }
 };
-
-struct kruskal
+bool vis[MAXN];
+int prim(int n)
 {
-    union_find_set ufs;
-    ll operator()(directed_graph* G)
+    priority_queue<HeapNode> Q;
+    for (int i = head[1]; ~i; i = edges[i].nxt)
+        Q.push({i, edges[i].w});
+    fill_n(vis, n + 1, false), vis[1] = true;
+    int cnt = 1, ans = 0;
+    while (!Q.empty())
     {
-        sort(G->edges, G->edges + G->n_edge);
-        ufs.clear(G->n_node);
-        int cnt = G->n_node - 1;
-        ll ans = 0;
-        for(int i = 0; i < G->n_edge; i++)
+        HeapNode node = Q.top();
+        Q.pop();
+        int u = edges[node.id].to;
+        if (vis[u])
+            continue;
+        ans += node.dis;
+        vis[u] = true, cnt++;
+        for (int i = head[u]; ~i; i = edges[i].nxt)
         {
-            directed_graph::edge& e = G->edges[i];
-            if(ufs.merge(e.from, e.to))
-            {
-                ans += e.weight;
-                cnt--;
-                if(!cnt)return ans;
-            }
+            Edge &e = edges[i];
+            if (!vis[e.to])
+                Q.push({i, e.w});
         }
-        return -1;
     }
-}mst;
+    return cnt == n ? ans : -1;
+}
 
 int main()
 {
@@ -114,16 +90,110 @@ int main()
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; readi2(n,m);
-    G.clear(n);
-    while(m--)
+    int n, m;
+    readi(n, m);
+    edgeid = 0, fill_n(head, n + 1, -1);
+    rep(i, 1, m)
     {
-        int u,v,w;
-        readi3(u,v,w);
-        G.add_edge(u,v,w);    
+        int u, v, w;
+        readi(u, v, w);
+        addedge2(u, v, w);
     }
-    ll ans=mst(&G);
-    if(~ans)printf("%d",ans);
-    else printf("orz");
+    int ans = prim(n);
+    if (ans != -1)
+        printf("%d", ans);
+    else
+        printf("orz");
     return 0;
 }
+
+/**
+* Number:p3366
+* Title:【模板】最小生成树
+* Status:AC
+* Tag:[mst, 最小生成树, kruskal]
+**/
+
+/*
+#include <cstdio>
+#include <iostream>
+#include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <vector>
+#include <queue>
+#include <cassert>
+using namespace std;
+
+#define INF 0x3f3f3f3f
+typedef long long ll;
+typedef unsigned long long ull;
+
+inline int readi(int &i1) { return scanf("%d", &i1); }
+inline int readi(int &i1, int &i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int &i1, int &i2, int &i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int &i1, int &i2, int &i3, int &i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char *s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
+#define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
+#define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
+
+const int MAXN = 5e3 + 10;
+const int MAXM = 2e5 + 10;
+struct Edge
+{
+    int u, v, w;
+    bool operator<(const Edge &rhs) const
+    {
+        return w < rhs.w;
+    }
+} edges[MAXM]; // 无向图
+
+int fa[MAXN]; // 并查集模板
+int findr(int x)
+{
+    return x == fa[x] ? x : fa[x] = findr(fa[x]);
+}
+bool merge(int x, int y)
+{
+    int rx = findr(x), ry = findr(y);
+    if (rx == ry)
+        return false;
+    fa[rx] = ry;
+    return true;
+}
+
+int kruskal(int n, int m) // 有解返回MST的权值，无解返回-1
+{
+    sort(edges, edges + m);
+    int cnt = 1, ans = 0;
+    repne(i, 0, m)
+    {
+        Edge &e = edges[i];
+        if (merge(e.u, e.v))
+            ans += e.w, cnt++;
+    }
+    return cnt == n ? ans : -1;
+}
+
+int main()
+{
+#ifdef __DEBUG__
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
+#endif
+    int n, m;
+    readi(n, m); // 点数，边数
+    repne(i, 0, m) readi(edges[i].u, edges[i].v, edges[i].w);
+    iota(fa + 1, fa + n + 1, 1); // 并查集初始化
+    int ans = kruskal(n, m);
+    if (ans != -1)
+        printf("%d", ans);
+    else
+        printf("orz");
+    return 0;
+}
+*/
