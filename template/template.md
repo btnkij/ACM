@@ -3824,7 +3824,9 @@ int main()
 }
 ```
 
-### 带上下界的网络流
+
+
+### 带上下界的网络流（待补充）
 
 
 
@@ -4219,7 +4221,7 @@ struct gauss_elimination
 
 ## 计算几何
 
-#### 通用
+### 通用
 
 ```c++
 const double eps = 1e-8; // 精度
@@ -4246,7 +4248,7 @@ inline double degToRad(double ang)
 
 
 
-#### 点 向量
+### 点 向量
 
 ```c++
 struct Vector
@@ -4359,7 +4361,9 @@ inline Vector rotate(const Vector& v, double theta)
 }
 ```
 
-#### 直线 线段
+
+
+### 直线 线段
 
 ```c++
 struct Line
@@ -4504,7 +4508,9 @@ Point intersect(const Line& lhs, const Line& rhs)
 }
 ```
 
-#### 多边形 凸包
+
+
+### 多边形 凸包
 
 ```c++
 typedef std::vector<Point> Polygen;
@@ -4624,7 +4630,9 @@ int position(const Polygen& lhs, const Polygen& rhs)
 }
 ```
 
-#### 圆
+
+
+### 圆
 
 ```c++
 struct Circle
