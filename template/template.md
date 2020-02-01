@@ -1,6 +1,16 @@
 [TOC]
 
-## Util
+## 待整理
+
+DSU-On-Tree cf600E
+
+莫队 luogu1494
+
+带修改莫队 luogu1903
+
+
+
+## 未分类
 
 ### include & define
 
@@ -352,7 +362,7 @@ struct dancing_links
     struct dlx_node
     {
         int x, y;                        // 行号，列号
-        dlx_node *lef, *rig, *up, *down; // 十字链表
+        dlx_node *lef, *rig, *up, *down; // 循环十字链表
     } nodes[MAX_ROW * MAX_COL + MAX_ROW + 10];
     dlx_node *row[MAX_ROW + 10], *col[MAX_COL + 10], *tail; // 行首，列首，尾节点
     int len[MAX_COL + 10]; // 每一列元素个数
@@ -452,6 +462,8 @@ int main()
     return 0;
 }
 ```
+
+
 
 ## 动态规划
 
@@ -713,7 +725,7 @@ int main()
 
 ## 数据结构
 
-### ST表 区间最值查询
+### ST表 静态区间最值查询
 
 ```c++
 const int MAXN = 1e5 + 10;
@@ -1621,7 +1633,6 @@ int main()
 **/
 
 const int MAXN = 2e5 + 10;
-
 struct Node
 {
     int sum, lc, rc; // 计数，左右儿子编号
@@ -1658,8 +1669,7 @@ int add(int pos, int u, int lt, int rt)
 // qlt,qrt-查询区间左右端点 lt,rt-当前区间左右端点 k-查询第k小
 int query(int qlt, int qrt, int lt, int rt, int k)
 {
-    if (lt == rt)
-        return lt;
+    if (lt == rt) return lt;
     // 区间左儿子的数字个数
     int cnt = tree[tree[qrt].lc].sum - tree[tree[qlt].lc].sum;
     int mid = (lt + rt) >> 1;
@@ -1672,8 +1682,7 @@ int query(int qlt, int qrt, int lt, int rt, int k)
 int a[MAXN], b[MAXN];
 int main()
 {
-    int n, m;
-    readi(n, m); // 序列长度，询问数
+    int n, m; readi(n, m); // 序列长度，询问数
     repne(i, 0, n)
     {
         readi(a[i]); // 要查询的序列
@@ -1688,8 +1697,7 @@ int main()
     }
     while (m--)
     {
-        int lt, rt, k;
-        readi(lt, rt, k); // 查询闭区间[lt, rt]的第k小
+        int lt, rt, k; readi(lt, rt, k); // 查询闭区间[lt, rt]的第k小
         printf("%d\n", b[query(root[lt - 1], root[rt], 1, tot, k) - 1]);
     }
     return 0;
@@ -1705,16 +1713,6 @@ int main()
 * Status:AC
 * Tag:[可持久化, fhq treap]
 **/
-
-#include <cstdio>
-#include <iostream>
-#include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <vector>
-#include <queue>
-#include <ctime>
-using namespace std;
 
 const int MAXN = 1e6 + 10;
 struct Node // FHQTreap模板
