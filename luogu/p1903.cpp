@@ -97,7 +97,7 @@ int main()
 #endif
     int n = readu(), m = readu();
     rep(i, 1, n) s[i] = readu();
-    sz = (int)pow(n + 1, 2.0 / 3.0);
+    sz = (int)pow(n + 1, 2.0 / 3.0); // 复杂度O(n^(5/3))
     int len1 = 0, len2 = 0;
     int t = 0;
     while (m--)
