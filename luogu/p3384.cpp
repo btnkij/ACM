@@ -31,8 +31,15 @@ inline int reads(char *s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN = 1e5 + 10;
+/**
+* Number:luogu3384
+* Title:树链剖分
+* Status:AC
+* Tag:[树链剖分, 线段树]
+* desc: 树链剖分模板题
+**/
 
+const int MAXN = 1e5 + 10;
 struct Edge
 {
     int from, to, nxt;
@@ -57,7 +64,7 @@ void dfs1(int u, int pre) // u-当前节点 pre-父节点
     QTreeNode &cur = nodes[u];
     cur.fa = pre;
     cur.dep = nodes[pre].dep + 1;
-    int maxsz = cur.sz = 1;
+    cur.sz = 1;
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
@@ -65,11 +72,8 @@ void dfs1(int u, int pre) // u-当前节点 pre-父节点
             continue;
         dfs1(v, u);
         cur.sz += nodes[v].sz;
-        if (nodes[v].sz >= maxsz)
-        {
-            maxsz = nodes[v].sz;
+        if (nodes[v].sz >= nodes[cur.son].sz)
             cur.son = v;
-        }
     }
 }
 void dfs2(int u, int top) // u-当前节点 top-重链顶端节点
@@ -160,18 +164,10 @@ void add_chain(int n, int x, int y, ll qval)
     int topx = nodes[x].top, topy = nodes[y].top;
     while (topx != topy) // 如果不在一条链上
     {
-        if (nodes[topx].dep >= nodes[topy].dep)
-        {
-            add_range(1, 1, n, nodes[topx].pos, nodes[x].pos, qval);
-            x = nodes[topx].fa;
-            topx = nodes[x].top;
-        }
-        else
-        {
-            add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
-            y = nodes[topy].fa;
-            topy = nodes[y].top;
-        }
+        if (nodes[topx].dep > nodes[topy].dep) // 始终保证x是较浅的节点
+            swap(topx, topy), swap(x, y);
+        add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
+        y = nodes[topy].fa, topy = nodes[y].top;
     }
     if (nodes[x].dep > nodes[y].dep)
         swap(x, y);
@@ -184,18 +180,10 @@ ll query_chain(int n, int x, int y)
     int topx = nodes[x].top, topy = nodes[y].top;
     while (topx != topy)
     {
-        if (nodes[topx].dep >= nodes[topy].dep)
-        {
-            ans = (ans + query_range(1, 1, n, nodes[topx].pos, nodes[x].pos)) % mod;
-            x = nodes[topx].fa;
-            topx = nodes[x].top;
-        }
-        else
-        {
-            ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
-            y = nodes[topy].fa;
-            topy = nodes[y].top;
-        }
+        if (nodes[topx].dep > nodes[topy].dep)
+            swap(topx, topy), swap(x, y);
+        ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
+        y = nodes[topy].fa, topy = nodes[y].top;
     }
     if (nodes[x].dep > nodes[y].dep)
         swap(x, y);
@@ -205,10 +193,6 @@ ll query_chain(int n, int x, int y)
 
 int main()
 {
-#ifdef __DEBUG__
-    freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
-#endif
     int n, m, r; // 节点数、询问数、根节点编号
     readi(n, m, r);
     scanf("%lld", &mod); // 取模
@@ -248,7 +232,8 @@ int main()
             break;
         case 4: // 查询以x为根节点的子树的节点权值和
             readi(x);
-            printf("%lld\n", query_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1));
+            printf("%lld\n",
+                   query_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1));
             break;
         }
     }
