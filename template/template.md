@@ -2,8 +2,6 @@
 
 ## 待整理
 
-DSU-On-Tree cf600E
-
 莫队 luogu1494
 
 带修改莫队 luogu1903
@@ -2240,6 +2238,84 @@ struct Trie
 
 ## 树
 
+### DSU-On-Tree
+
+```c++
+/**
+* Number:cf600e
+* Title:Lomsat gelral
+* Status:AC
+* Tag:[DSU-On-Tree]
+* desc: 树上每个节点一种颜色，求所有子树中数量最多的颜色，多个颜色最多时输出它们的和
+**/
+
+const int MAXN = 1e5 + 10;
+vector<int> adj[MAXN];  // 邻接表
+int c[MAXN], son[MAXN]; // 节点颜色，重儿子
+
+int dfs(int u, int pre) // 重链剖分
+{
+    int sum = 1, tmp = 0;
+    for (int v : adj[u])
+    {
+        if (v == pre) continue;
+        int t = dfs(v, u);
+        sum += t;
+        if (t > tmp) tmp = t, son[u] = v;
+    }
+    return sum;
+}
+
+int prior;                        // 重儿子
+ll cnt[MAXN], curmax;             // 当前每种颜色的数量，当前最大值
+ll sum, ans[MAXN];                // 当前答案，最终答案
+void calc(int u, int pre, int op) // 统计颜色数量，op=1表示统计，-1表示清除
+{
+    cnt[c[u]] += op;
+    if (cnt[c[u]] > curmax)
+        curmax = cnt[c[u]], sum = c[u];
+    else if (cnt[c[u]] == curmax)
+        sum += c[u];
+    for (int v : adj[u])
+        if (v != pre && v != prior)
+            calc(v, u, op);
+}
+void dfs1(int u, int pre, bool rst) // DSU-On-Tree rst表示计算完后是否清空cnt[]
+{
+    for (int v : adj[u])
+        if (v != pre && v != son[u]) // 重儿子的cnt[]已经保留，不用统计
+            dfs1(v, u, true);        // 轻儿子算完要清空
+    if (son[u])
+        dfs1(son[u], u, false); // 重儿子算完保留cnt[]
+    prior = son[u];
+    calc(u, pre, 1);
+    ans[u] = sum;
+    if (rst)
+    {
+        prior = -1;
+        calc(u, pre, -1);
+        curmax = -INF; // 注意当前最大值也要清空
+    }
+}
+
+int main()
+{
+    int n; readi(n); // 节点数
+    rep(i, 1, n) readi(c[i]); // 每个节点的颜色
+    repne(i, 1, n)
+    {
+        int x, y; readi(x, y); // 树边
+        adj[x].push_back(y), adj[y].push_back(x);
+    }
+    dfs(1, -1); // 重链剖分
+    dfs1(1, -1, false); // DSU-On-Tree统计答案
+    rep(i, 1, n) printf("%lld ", ans[i]);
+    return 0;
+}
+```
+
+
+
 ### 最近公共祖先 LCA
 
 ```c++
@@ -2343,7 +2419,6 @@ int main()
 **/
 
 const int MAXN = 1e5 + 10;
-
 struct Edge
 {
     int from, to, nxt;
@@ -2368,19 +2443,15 @@ void dfs1(int u, int pre) // u-当前节点 pre-父节点
     QTreeNode &cur = nodes[u];
     cur.fa = pre;
     cur.dep = nodes[pre].dep + 1;
-    int maxsz = cur.sz = 1;
+    cur.sz = 1;
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
-        if (v == pre)
-            continue;
+        if (v == pre) continue;
         dfs1(v, u);
         cur.sz += nodes[v].sz;
-        if (nodes[v].sz >= maxsz)
-        {
-            maxsz = nodes[v].sz;
+        if (nodes[v].sz >= nodes[cur.son].sz)
             cur.son = v;
-        }
     }
 }
 void dfs2(int u, int top) // u-当前节点 top-重链顶端节点
@@ -2471,21 +2542,12 @@ void add_chain(int n, int x, int y, ll qval)
     int topx = nodes[x].top, topy = nodes[y].top;
     while (topx != topy) // 如果不在一条链上
     {
-        if (nodes[topx].dep >= nodes[topy].dep)
-        {
-            add_range(1, 1, n, nodes[topx].pos, nodes[x].pos, qval);
-            x = nodes[topx].fa;
-            topx = nodes[x].top;
-        }
-        else
-        {
-            add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
-            y = nodes[topy].fa;
-            topy = nodes[y].top;
-        }
+        if (nodes[topx].dep > nodes[topy].dep) // 始终保证x是较浅的节点
+            swap(topx, topy), swap(x, y);
+        add_range(1, 1, n, nodes[topy].pos, nodes[y].pos, qval);
+        y = nodes[topy].fa, topy = nodes[y].top;
     }
-    if (nodes[x].dep > nodes[y].dep)
-        swap(x, y);
+    if (nodes[x].dep > nodes[y].dep) swap(x, y);
     add_range(1, 1, n, nodes[x].pos, nodes[y].pos, qval);
 }
 // 树链查询 n-节点总数 x,y-链的端点
@@ -2495,21 +2557,12 @@ ll query_chain(int n, int x, int y)
     int topx = nodes[x].top, topy = nodes[y].top;
     while (topx != topy)
     {
-        if (nodes[topx].dep >= nodes[topy].dep)
-        {
-            ans = (ans + query_range(1, 1, n, nodes[topx].pos, nodes[x].pos)) % mod;
-            x = nodes[topx].fa;
-            topx = nodes[x].top;
-        }
-        else
-        {
-            ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
-            y = nodes[topy].fa;
-            topy = nodes[y].top;
-        }
+        if (nodes[topx].dep > nodes[topy].dep)
+            swap(topx, topy), swap(x, y);
+        ans = (ans + query_range(1, 1, n, nodes[topy].pos, nodes[y].pos)) % mod;
+        y = nodes[topy].fa, topy = nodes[y].top;
     }
-    if (nodes[x].dep > nodes[y].dep)
-        swap(x, y);
+    if (nodes[x].dep > nodes[y].dep) swap(x, y);
     ans = (ans + query_range(1, 1, n, nodes[x].pos, nodes[y].pos)) % mod;
     return ans;
 }
@@ -2683,75 +2736,78 @@ int main()
 
 ```c++
 /**
-* Number:luogu3690
+* Number:p3690
 * Title:【模板】Link Cut Tree （动态树）
 * Status:AC
-* Tag:[LCT, 动态树]
-* desc: LCT模板题，维护链上的异或和
+* Tag:[lct, 动态树]
+* desc: lct模板题，维护链上的异或和
 **/
 
 struct Node
 {
-    int val,sum,flip; // 节点的值、子树的异或和、翻转标记
-    int fa,son[2]; // 父节点、左右儿子
-}tree[100010];
-inline int dir(int u)
-{
-    return tree[tree[u].fa].son[1]==u;
-}
+    int val, sum, flip; // 节点的值、子树的异或和、翻转标记
+    int fa, son[2];     // 父节点、左右儿子
+} tree[100010];
 inline void pushup(int u) // 计算要维护的信息
 {
-    int* son=tree[u].son;
-    tree[u].sum=tree[son[0]].sum^tree[son[1]].sum^tree[u].val;
+    int *son = tree[u].son;
+    tree[u].sum = tree[son[0]].sum ^ tree[son[1]].sum ^ tree[u].val;
 }
 inline void pushdown(int u) // 下放翻转标记
 {
-    if(!tree[u].flip)return;
-    int* son=tree[u].son;
-    swap(son[0],son[1]);
-    tree[u].flip=0;
-    tree[son[0]].flip^=1;
-    tree[son[1]].flip^=1;
+    if (!tree[u].flip) return;
+    int *son = tree[u].son;
+    swap(son[0], son[1]);
+    tree[u].flip = 0;
+    tree[son[0]].flip ^= 1;
+    tree[son[1]].flip ^= 1;
+}
+inline int dir(int u)
+{
+    return tree[tree[u].fa].son[1] == u;
 }
 inline bool isroot(int u) // 判断u是否是根节点
 {
-    int* son=tree[tree[u].fa].son;
-    return son[0]!=u && son[1]!=u;
+    int *son = tree[tree[u].fa].son;
+    return son[0] != u && son[1] != u;
 }
 inline void rotate(int u)
 {
-    int fa=tree[u].fa, dfa=dir(u);
-    int ffa=tree[fa].fa, dffa=dir(fa);
-    int sub=tree[u].son[dfa^1];
-    tree[u].fa=ffa;
-    if(!isroot(fa))tree[ffa].son[dffa]=u; // 两个SplayTree之间连虚边
-    tree[u].son[dfa^1]=fa, tree[fa].fa=u;
-    tree[fa].son[dfa]=sub, tree[sub].fa=fa;
-    pushup(fa); pushup(u);
+    int fa = tree[u].fa, dfa = dir(u);
+    int ffa = tree[fa].fa, dffa = dir(fa);
+    int sub = tree[u].son[dfa ^ 1];
+    tree[u].fa = ffa;
+    if (!isroot(fa))
+        tree[ffa].son[dffa] = u; // 两个SplayTree之间连虚边
+    tree[u].son[dfa ^ 1] = fa, tree[fa].fa = u;
+    tree[fa].son[dfa] = sub, tree[sub].fa = fa;
+    pushup(fa), pushup(u);
 }
 void splay(int u)
 {
     static int up[100010];
-    int tot=0;
-    for(int i=u;;i=tree[i].fa) // 之上而下释放翻转标记
+    int tot = 0;
+    for (int i = u;; i = tree[i].fa) // 之上而下释放翻转标记
     {
-        up[tot++]=i;
-        if(isroot(i))break;
+        up[tot++] = i;
+        if (isroot(i)) break;
     }
-    while(tot--)pushdown(up[tot]);
-    while(!isroot(u))
+    while (tot--)
+        pushdown(up[tot]);
+    while (!isroot(u))
     {
-        int fa=tree[u].fa;
-        if(!isroot(fa))rotate(dir(u)==dir(fa)?fa:u);
+        int fa = tree[u].fa;
+        if (!isroot(fa))
+            rotate(dir(u) == dir(fa) ? fa : u);
         rotate(u);
     }
 }
 void access(int u) // 使根节点-u的链在一棵SplayTree上，u为最深的节点
 {
-    for(int rson=0;u;rson=u,u=tree[u].fa)
+    for (int rson = 0; u; rson = u, u = tree[u].fa)
     {
         splay(u);
-        tree[u].son[1]=rson;
+        tree[u].son[1] = rson;
         pushup(u);
     }
 }
@@ -2759,68 +2815,69 @@ void makeroot(int u) // 使u成为根节点
 {
     access(u);
     splay(u);
-    tree[u].flip^=1;
+    tree[u].flip ^= 1;
 }
 int findroot(int u) // 返回u的根节点
 {
     access(u);
     splay(u);
-    while(true)
+    while (true)
     {
         pushdown(u);
-        if(!tree[u].son[0])return u;
-        u=tree[u].son[0];
+        if (!tree[u].son[0]) return u;
+        u = tree[u].son[0];
     }
 }
-void split(int x,int y) // 计算链x-y的信息，答案为tree[y].sum
-{                       // split操作后，y无右儿子，y的左儿子为以x为根的子树
+void split(int x, int y) // 计算链x-y的信息，答案为tree[y].sum
+{                        // split操作后，根节点y无右儿子，左儿子为以x为根的子树
     makeroot(x);
     access(y);
     splay(y);
 }
-void link(int x,int y) // 连接x, y两个节点
+void link(int x, int y) // 连接x, y两个节点
 {
     makeroot(x);
-    if(findroot(y)!=x)tree[x].fa=y;
+    if (findroot(y) != x)
+        tree[x].fa = y;
 }
-void cut(int x,int y) // 断开x, y两个节点，不必保证x, y连通
+void cut(int x, int y) // 断开x, y两个节点，不必保证x, y连通
 {
-    split(x,y);
-    if(tree[y].son[0]==x)
+    split(x, y);
+    if (tree[y].son[0] == x)
     {
-        tree[x].fa=tree[y].son[0]=0;
+        tree[x].fa = tree[y].son[0] = 0;
         pushup(y);
     }
 }
 
 int main()
 {
-    int n,m; readi(n,m); // 节点数、询问数
-    rep(i,1,n) // 输入每个节点的权值
+    int n, m; readi(n, m); // 节点数、询问数
+    rep(i, 1, n) // 输入每个节点的权值
     {
         readi(tree[i].val);
-        tree[i].sum=tree[i].val;
+        tree[i].sum = tree[i].val;
     }
-    while(m--)
+    while (m--)
     {
-        int op,x,y; readi(op,x,y);
-        if(op==0) // 链x-y的异或和
+        int op, x, y; readi(op, x, y);
+        if (op == 0) // 链x-y的异或和
         {
-            split(x,y);
-            printf("%d\n",tree[y].sum);
+            split(x, y);
+            printf("%d\n", tree[y].sum);
         }
-        else if(op==1) // 连接x, y
+        else if (op == 1) // 连接x, y
         {
-            link(x,y);
+            link(x, y);
         }
-        else if(op==2) // 断开x, y
+        else if (op == 2) // 断开x, y
         {
-            cut(x,y);
+            cut(x, y);
         }
-        else if(op==3) // 将节点x的权值修改为y
+        else if (op == 3) // 将节点x的权值修改为y
         {
             splay(x);
-            tree[x].val=y;
+            tree[x].val = y;
             pushup(x);
         }
     }
