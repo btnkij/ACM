@@ -3,7 +3,7 @@
 * Title:[ZJOI2007]捉迷藏
 * Status:AC
 * Tag:[线段树, 括号序列]
-* desc: 动态维护树上最远两个黑点的距离
+* desc: 树边无边权，动态维护树上最远两个黑点的距离
 **/
 
 #include <cstdio>
