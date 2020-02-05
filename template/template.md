@@ -2729,28 +2729,28 @@ int main()
 
 ```c++
 /**
-* Number:p4115
-* Title:Qtree4
+* Number:sp2939
+* Title:QTREE5 - Query on a tree V
 * Status:AC
 * Tag:[动态点分治]
-* desc: 树边有边权，动态维护树上最远两个白点的距离
+* desc: 多次询问树上一个点到最近白点的距离
 **/
 
 const int MAXN = 1e5 + 10;
 struct Edge // 链式前向星模板
 {
-    int from, to, dis, nxt;
+    int from, to, nxt;
 } edges[MAXN * 2];
 int head[MAXN], edgeid;
-void addedge(int from, int to, int dis)
+void addedge(int from, int to)
 {
-    edges[edgeid] = {from, to, dis, head[from]};
+    edges[edgeid] = {from, to, head[from]};
     head[from] = edgeid++;
 }
 
-struct Heap // 大根堆，multiset很慢，请勿替代
+struct Heap // 小根堆，multiset很慢，请勿替代
 {
-    priority_queue<int> open, close;
+    priority_queue<int, vector<int>, greater<int>> open, close;
     int size()
     {
         return open.size() - close.size();
@@ -2769,24 +2769,14 @@ struct Heap // 大根堆，multiset很慢，请勿替代
             open.pop(), close.pop();
         return open.top();
     }
-    int top2()
-    {
-        int k1 = top();
-        open.pop();
-        int k2 = top();
-        open.push(k1);
-        return k1 + k2;
-    }
 };
 
 struct Node // 点分树的节点
 {
     int color;           // 节点颜色 1-白色 0-黑色
     int fa, dep, up[20]; // fa-父节点 dep-深度 up[i]-到深度为i的重心的距离
-    int ans;             // 子树的答案
-    Heap dis, maxdis;    // dis-到当前节点的父节点的距离 maxdis-子树dis的最大值
+    Heap dis;            // 分治子树中所有节点到分治重心的距离
 } tree[MAXN];
-Heap ans; // 维护所有节点ans的堆
 int root, totrk, rk[MAXN], maxrk;
 bool cg[MAXN];
 void getcg(int u, int pre) // 点分治模板：计算树的重心，答案保存到root中
@@ -2802,72 +2792,56 @@ void getcg(int u, int pre) // 点分治模板：计算树的重心，答案保�
         rk[u] += rk[v];
     }
     tmp = max(tmp, totrk - rk[u]);
-    if (tmp < maxrk) root = u, maxrk = tmp;
+    if (tmp < maxrk)
+        maxrk = tmp, root = u;
 }
-void pushup(int u) // 计算当前节点的ans，并将dis推到父节点
+void dfs(int u, int pre, int dep) // 计算up[]
 {
-    tree[u].ans = (tree[u].color == 1 ? 0 : -INF);   // 如果是白点，答案初始为到自身的距离0
-    if (tree[u].maxdis.size() && tree[u].color == 1) // 子节点到当前节点的距离
-        tree[u].ans = max(tree[u].ans, tree[u].maxdis.top());
-    if (tree[u].maxdis.size() >= 2) // 经过分治重心的最长链
-        tree[u].ans = max(tree[u].ans, tree[u].maxdis.top2());
-    ans.push(tree[u].ans);
-    if (tree[u].dis.size() && tree[u].fa)
-        tree[tree[u].fa].maxdis.push(tree[u].dis.top());
-}
-void dfs(int u, int pre, int dep) // 计算当前节点的up和dis
-{
-    if (dep > 1)
-        tree[root].dis.push(tree[u].up[dep - 1]);
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        Edge &e = edges[i];
-        if (e.to == pre || cg[e.to]) continue;
-        tree[e.to].up[dep] = tree[u].up[dep] + e.dis;
-        dfs(e.to, u, dep);
+        int v = edges[i].to;
+        if (v == pre || cg[v]) continue;
+        tree[v].up[dep] = tree[u].up[dep] + 1;
+        dfs(v, u, dep);
     }
 }
 // 建点分树：u-当前节点 pre-上一级分治重心 dep-深度 totrk-当前子树大小
 void build(int u, int pre, int dep, int totrk)
 {
-    ::totrk = totrk, maxrk = INF;
+    ::totrk = totrk, maxrk = INF; // 注意调用getcg前的全局变量初始化
     getcg(u, 0);
     cg[u = root] = true; // 注意root是全局变量，可能更改，所以先赋值给u
     Node &cur = tree[u];
-    cur.fa = pre, cur.dep = dep, cur.color = 1; // 初始所有点都是白点
-    dfs(u, 0, dep); // 计算cur.dis
+    cur.fa = pre, cur.dep = dep, cur.color = 0;
+    dfs(u, 0, dep);
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        Edge &e = edges[i];
-        if (cg[e.to]) continue;
-        if (rk[e.to] > rk[u]) // root上方的子树rk计算不正确，需在这里修正
-            rk[e.to] = totrk - rk[u];
-        build(e.to, u, dep + 1, rk[e.to]);
+        int v = edges[i].to;
+        if (cg[v])
+            continue;
+        if (rk[v] > rk[u]) // root上方的子树rk计算不正确，需在这里修正
+            rk[v] = totrk - rk[u];
+        build(v, u, dep + 1, rk[v]);
     }
-    pushup(u);
 }
 void change(int u) // 切换节点的颜色
 {
-    static int trace[MAXN];
-    for (int i = tree[u].dep, x = u; i; i--, x = tree[x].fa)
-        trace[i] = x;
-    for (int i = 1; i <= tree[u].dep; i++) // 自上而下删除与u有关的信息
-    {
-        Node &cur = tree[trace[i]];
-        if (cur.fa && cur.dis.size())
-            tree[cur.fa].maxdis.pop(cur.dis.top());
-        if (cur.dep > 1 && tree[u].color == 1)
-            cur.dis.pop(tree[u].up[cur.dep - 1]);
-        ans.pop(cur.ans);
-    }
-    tree[u].color ^= 1;                    // 切换颜色
-    for (int i = tree[u].dep; i >= 1; i--) // 自底向上重新计算与u有关的信息
-    {
-        int x = trace[i];
-        if (tree[x].dep > 1 && tree[u].color == 1)
-            tree[x].dis.push(tree[u].up[i - 1]);
-        pushup(x);
-    }
+    Node &nod = tree[u];
+    nod.color ^= 1;
+    if (nod.color == 1) // 如果变成白点，自底向上添加u到上级重心的距离
+        for (int x = u; x; x = tree[x].fa) // 包括到自身的距离
+            tree[x].dis.push(nod.up[tree[x].dep]);
+    else // 如果变成白点，自底向上删除距离信息
+        for (int x = u; x; x = tree[x].fa)
+            tree[x].dis.pop(nod.up[tree[x].dep]);
+}
+int query(int u) // 查询离u最近的白点的距离
+{
+    int ans = INF;
+    for (int x = u; x; x = tree[x].fa)
+        if (tree[x].dis.size())
+            ans = min(ans, tree[u].up[tree[x].dep] + tree[x].dis.top());
+    return ans == INF ? -1 : ans;
 }
 
 int main()
@@ -2876,26 +2850,18 @@ int main()
     clr(head, -1), edgeid = 0; // 链式前向星的初始化
     repne(i, 1, n)
     {
-        int u, v, w; readi(u, v, w);
-        addedge(u, v, w), addedge(v, u, w);
+        int u, v; readi(u, v);
+        addedge(u, v), addedge(v, u);
     }
     build(1, 0, 1, n); // 建点分树
     int q; readi(q); // 询问数
     while (q--)
     {
-        char op[4]; reads(op);
-        if (op[0] == 'C') // 切换节点x的颜色
-        {
-            int x; readi(x);
+        int op, x; readi(op, x);
+        if (op == 0) // 切换节点x的颜色
             change(x);
-        }
-        else if (op[0] == 'A') // 查询距离最远的两个白点
-        {
-            if (ans.top() == -INF) // 不存在白点
-                puts("They have disappeared.");
-            else
-                printf("%d\n", ans.top());
-        }
+        else if (op == 1) // 查询与x最近的白点的距离
+            printf("%d\n", query(x));
     }
     return 0;
 }
@@ -2903,41 +2869,74 @@ int main()
 
 
 
-### 动态树 LCT
+### 动态树
+
+#### Link-Cut-Tree
 
 ```c++
 /**
-* Number:p3690
-* Title:【模板】Link Cut Tree （动态树）
+* Number:luogu1501
+* Title:[国家集训队]Tree II
 * Status:AC
-* Tag:[lct, 动态树]
-* desc: lct模板题，维护链上的异或和
+* Tag:[lct]
+* desc: 在动态连边和删边的树上，维护链上的节点权值和
 **/
 
+const int MAXN = 1e5 + 10;
+const int MOD = 51061;
 struct Node
 {
-    int val, sum, flip; // 节点的值、子树的异或和、翻转标记
-    int fa, son[2];     // 父节点、左右儿子
-} tree[100010];
+    int flip, fa, son[2]; // LCT节点必要的信息：flip-翻转标记 fa-父节点 son[]-左右儿子
+    ll val, ans;          // val-节点的值 ans-子树的答案
+    ll add, mul;          // add-加法lazy标记 mul-乘法lazy标记
+    int sz;               // 子树大小
+} tree[MAXN];
 inline void pushup(int u) // 计算要维护的信息
 {
-    int *son = tree[u].son;
-    tree[u].sum = tree[son[0]].sum ^ tree[son[1]].sum ^ tree[u].val;
+    int l = tree[u].son[0], r = tree[u].son[1];
+    tree[u].sz = tree[l].sz + tree[r].sz + 1;
+    tree[u].ans = (tree[l].ans + tree[r].ans + tree[u].val) % MOD;
 }
-inline void pushdown(int u) // 下放翻转标记
+void pushadd(int u, ll lazy) // 传递加法标记
 {
-    if (!tree[u].flip) return;
-    int *son = tree[u].son;
-    swap(son[0], son[1]);
-    tree[u].flip = 0;
-    tree[son[0]].flip ^= 1;
-    tree[son[1]].flip ^= 1;
+    Node &nod = tree[u];
+    nod.val = (nod.val + lazy) % MOD;
+    nod.ans = (nod.ans + lazy * nod.sz) % MOD;
+    nod.add = (nod.add + lazy) % MOD;
 }
-inline int dir(int u)
+void pushmul(int u, ll lazy) // 传递乘法标记
+{
+    Node &nod = tree[u];
+    nod.val = (nod.val * lazy) % MOD;
+    nod.ans = (nod.ans * lazy) % MOD;
+    nod.mul = (nod.mul * lazy) % MOD;
+    nod.add = (nod.add * lazy) % MOD;
+}
+inline void pushdown(int u) // 传递所有标记
+{
+    Node &nod = tree[u];
+    if (nod.flip == 1)
+    {
+        swap(nod.son[0], nod.son[1]);
+        tree[nod.son[0]].flip ^= 1, tree[nod.son[1]].flip ^= 1;
+        nod.flip = 0;
+    }
+    if (nod.mul != 1)
+    {
+        pushmul(nod.son[0], nod.mul), pushmul(nod.son[1], nod.mul);
+        nod.mul = 1;
+    }
+    if (nod.add != 0)
+    {
+        pushadd(nod.son[0], nod.add), pushadd(nod.son[1], nod.add);
+        nod.add = 0;
+    }
+}
+inline int dir(int u) // 节点u在它父节点的哪一支
 {
     return tree[tree[u].fa].son[1] == u;
 }
-inline bool isroot(int u) // 判断u是否是根节点
+inline bool isroot(int u) // 节点u是否是SplayTree的根节点
 {
     int *son = tree[tree[u].fa].son;
     return son[0] != u && son[1] != u;
@@ -2947,23 +2946,23 @@ inline void rotate(int u)
     int fa = tree[u].fa, dfa = dir(u);
     int ffa = tree[fa].fa, dffa = dir(fa);
     int sub = tree[u].son[dfa ^ 1];
-    tree[u].fa = ffa;
-    if (!isroot(fa))
-        tree[ffa].son[dffa] = u; // 两个SplayTree之间连虚边
+    tree[u].fa = ffa;            // 子-父连边
+    if (!isroot(fa))             // 如果fa不是根节点
+        tree[ffa].son[dffa] = u; // 连父-子实边，否则只有子-父虚边
     tree[u].son[dfa ^ 1] = fa, tree[fa].fa = u;
     tree[fa].son[dfa] = sub, tree[sub].fa = fa;
     pushup(fa), pushup(u);
 }
 void splay(int u)
 {
-    static int up[100010];
+    static int up[MAXN];
     int tot = 0;
-    for (int i = u;; i = tree[i].fa) // 之上而下释放翻转标记
+    for (int x = u;; x = tree[x].fa)
     {
-        up[tot++] = i;
-        if (isroot(i)) break;
+        up[tot++] = x;
+        if (isroot(x)) break;
     }
-    while (tot--)
+    while (tot--) // 自顶向下传递标记
         pushdown(up[tot]);
     while (!isroot(u))
     {
@@ -2982,14 +2981,14 @@ void access(int u) // 使根节点-u的链在一棵SplayTree上，u为最深的�
         pushup(u);
     }
 }
-void makeroot(int u) // 使u成为根节点
-{
+void makeroot(int u) // 使u成为原树的根节点
+{                    // makeroot操作后，u也是SplayTree的根节点，u无左儿子
     access(u);
     splay(u);
     tree[u].flip ^= 1;
 }
-int findroot(int u) // 返回u的根节点
-{
+int findroot(int u) // 返回u在原树中的根节点
+{                   // findroot操作后，u为SplayTree的根节点
     access(u);
     splay(u);
     while (true)
@@ -2999,19 +2998,19 @@ int findroot(int u) // 返回u的根节点
         u = tree[u].son[0];
     }
 }
-void split(int x, int y) // 计算链x-y的信息，答案为tree[y].sum
+void split(int x, int y) // 计算链x-y的信息，答案为tree[y].ans
 {                        // split操作后，根节点y无右儿子，左儿子为以x为根的子树
     makeroot(x);
     access(y);
     splay(y);
 }
-void link(int x, int y) // 连接x, y两个节点
+void link(int x, int y) // 连接x、y两个节点，已连通则无效果
 {
     makeroot(x);
     if (findroot(y) != x)
         tree[x].fa = y;
 }
-void cut(int x, int y) // 断开x, y两个节点，不必保证x, y连通
+void cut(int x, int y) // 断开x、y两个节点，已连通则无效果
 {
     split(x, y);
     if (tree[y].son[0] == x)
@@ -3023,33 +3022,39 @@ void cut(int x, int y) // 断开x, y两个节点，不必保证x, y连通
 
 int main()
 {
-    int n, m; readi(n, m); // 节点数、询问数
-    rep(i, 1, n) // 输入每个节点的权值
+    int n, q; readi(n, q); // n-节点数 q-询问数
+    rep(i, 1, n) tree[i].val = tree[i].ans = tree[i].mul = tree[i].sz = 1;
+    repne(i, 1, n)
     {
-        readi(tree[i].val);
-        tree[i].sum = tree[i].val;
+        int u, v; readi(u, v);
+        link(u, v); // 连初始边
     }
-    while (m--)
+    while (q--)
     {
-        int op, x, y; readi(op, x, y);
-        if (op == 0) // 链x-y的异或和
+        char op[4];
+        reads(op);
+        if (op[0] == '+') // 链u-v所有节点权值+c
         {
-            split(x, y);
-            printf("%d\n", tree[y].sum);
+            int u, v, c; readi(u, v, c);
+            split(u, v);	// 先分离链u-v到单独的SplayTree中
+            pushadd(v, c);	// 再将加法标记作用于根节点
         }
-        else if (op == 1) // 连接x, y
+        else if (op[0] == '-') // 删边u1-v1，再加边u2-v2
         {
-            link(x, y);
+            int u1, v1, u2, v2; readi(u1, v1, u2, v2);
+            cut(u1, v1); link(u2, v2);
         }
-        else if (op == 2) // 断开x, y
+        else if (op[0] == '*') // 链u-v所有节点权值*c
         {
-            cut(x, y);
+            int u, v, c; readi(u, v, c);
+            split(u, v);
+            pushmul(v, c);
         }
-        else if (op == 3) // 将节点x的权值修改为y
+        else if (op[0] == '/') // 询问链u-v节点的权值和
         {
-            splay(x);
-            tree[x].val = y;
-            pushup(x);
+            int u, v; readi(u, v);
+            split(u, v);
+            printf("%lld\n", tree[v].ans);
         }
     }
     return 0;
