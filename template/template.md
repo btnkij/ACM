@@ -2779,7 +2779,15 @@ struct Heap // 大根堆，multiset很慢，请勿替代
     }
 };
 
-int root, tot, rk[MAXN], maxrk;
+struct Node // 点分树的节点
+{
+    int color;           // 节点颜色 1-白色 0-黑色
+    int fa, dep, up[20]; // fa-父节点 dep-深度 up[i]-到深度为i的重心的距离
+    int ans;             // 子树的答案
+    Heap dis, maxdis;    // dis-到当前节点的父节点的距离 maxdis-子树dis的最大值
+} tree[MAXN];
+Heap ans; // 维护所有节点ans的堆
+int root, totrk, rk[MAXN], maxrk;
 bool cg[MAXN];
 void getcg(int u, int pre) // 点分治模板：计算树的重心，答案保存到root中
 {
@@ -2793,18 +2801,9 @@ void getcg(int u, int pre) // 点分治模板：计算树的重心，答案保�
         tmp = max(tmp, rk[v]);
         rk[u] += rk[v];
     }
-    tmp = max(tmp, tot - rk[u]);
+    tmp = max(tmp, totrk - rk[u]);
     if (tmp < maxrk) root = u, maxrk = tmp;
 }
-
-struct Node // 点分树的节点
-{
-    int color;           // 节点颜色 1-白色 0-黑色
-    int fa, dep, up[20]; // fa-父节点 dep-深度 up[i]-到深度为i的重心的距离
-    int ans;             // 子树的答案
-    Heap dis, maxdis;    // dis-到当前节点的父节点的距离 maxdis-子树dis的最大值
-} tree[MAXN];
-Heap ans;          // 维护所有节点ans的堆
 void pushup(int u) // 计算当前节点的ans，并将dis推到父节点
 {
     tree[u].ans = (tree[u].color == 1 ? 0 : -INF);   // 如果是白点，答案初始为到自身的距离0
@@ -2816,15 +2815,14 @@ void pushup(int u) // 计算当前节点的ans，并将dis推到父节点
     if (tree[u].dis.size() && tree[u].fa)
         tree[tree[u].fa].maxdis.push(tree[u].dis.top());
 }
-void dfs(int u, int pre, int dep) // 计算当前节点的dis
+void dfs(int u, int pre, int dep) // 计算当前节点的up和dis
 {
     if (dep > 1)
         tree[root].dis.push(tree[u].up[dep - 1]);
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         Edge &e = edges[i];
-        if (e.to == pre || cg[e.to])
-            continue;
+        if (e.to == pre || cg[e.to]) continue;
         tree[e.to].up[dep] = tree[u].up[dep] + e.dis;
         dfs(e.to, u, dep);
     }
@@ -2832,12 +2830,12 @@ void dfs(int u, int pre, int dep) // 计算当前节点的dis
 // 建点分树：u-当前节点 pre-上一级分治重心 dep-深度 totrk-当前子树大小
 void build(int u, int pre, int dep, int totrk)
 {
-    tot = totrk, maxrk = INF;
+    ::totrk = totrk, maxrk = INF;
     getcg(u, 0);
     cg[u = root] = true; // 注意root是全局变量，可能更改，所以先赋值给u
     Node &cur = tree[u];
     cur.fa = pre, cur.dep = dep, cur.color = 1; // 初始所有点都是白点
-    dfs(u, 0, dep);                             // 计算cur.dis
+    dfs(u, 0, dep); // 计算cur.dis
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         Edge &e = edges[i];
@@ -2862,7 +2860,7 @@ void change(int u) // 切换节点的颜色
             cur.dis.pop(tree[u].up[cur.dep - 1]);
         ans.pop(cur.ans);
     }
-    tree[u].color ^= 1; // 切换颜色
+    tree[u].color ^= 1;                    // 切换颜色
     for (int i = tree[u].dep; i >= 1; i--) // 自底向上重新计算与u有关的信息
     {
         int x = trace[i];
@@ -2878,7 +2876,7 @@ int main()
     clr(head, -1), edgeid = 0; // 链式前向星的初始化
     repne(i, 1, n)
     {
-        int u, v, w; readi(u, v, w); // 建边
+        int u, v, w; readi(u, v, w);
         addedge(u, v, w), addedge(v, u, w);
     }
     build(1, 0, 1, n); // 建点分树
