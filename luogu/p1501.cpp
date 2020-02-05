@@ -2,7 +2,7 @@
 * Number:p1501
 * Title:[国家集训队]Tree II
 * Status:AC
-* Tag:[lct]
+* Tag:[LCT]
 * desc: 在动态连边和删边的树上，维护链上的节点权值和
 **/
 

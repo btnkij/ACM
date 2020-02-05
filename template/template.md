@@ -2915,7 +2915,7 @@ void pushmul(int u, ll lazy) // 传递乘法标记
 inline void pushdown(int u) // 传递所有标记
 {
     Node &nod = tree[u];
-    if (nod.flip == 1)
+    if (nod.flip == 1) // 翻转标记表示当前节点需要翻转，操作son[]时记得先pushdown
     {
         swap(nod.son[0], nod.son[1]);
         tree[nod.son[0]].flip ^= 1, tree[nod.son[1]].flip ^= 1;
@@ -2951,7 +2951,7 @@ inline void rotate(int u)
         tree[ffa].son[dffa] = u; // 连父-子实边，否则只有子-父虚边
     tree[u].son[dfa ^ 1] = fa, tree[fa].fa = u;
     tree[fa].son[dfa] = sub, tree[sub].fa = fa;
-    pushup(fa), pushup(u);
+    pushup(fa), pushup(u); // 注意pushup的顺序
 }
 void splay(int u)
 {
