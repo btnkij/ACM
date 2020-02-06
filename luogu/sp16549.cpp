@@ -1,8 +1,9 @@
 /**
 * Number:sp16549
 * Title:QTREE6 - Query on a tree VI
-* Status:WA
+* Status:AC
 * Tag:[LCT]
+* desc: 树上有黑白两色点，询问节点的同色连通块大小
 **/
 
 #include <cstdio>
@@ -45,12 +46,8 @@ void addedge(int from, int to)
 
 struct Node
 {
-    int flip, fa, son[2];
-    int sz, szi;
-    int size()
-    {
-        return sz + szi;
-    }
+    int fa, son[2];
+    int sz, szi; // 实儿子数量，虚儿子数量
 };
 struct LCT
 {
@@ -58,17 +55,7 @@ struct LCT
     inline void pushup(int u)
     {
         int l = tree[u].son[0], r = tree[u].son[1];
-        tree[u].sz = tree[l].sz + tree[r].sz + 1;
-    }
-    inline void pushdown(int u)
-    {
-        Node &nod = tree[u];
-        if (nod.flip)
-        {
-            swap(nod.son[0], nod.son[1]);
-            tree[nod.son[0]].flip ^= 1, tree[nod.son[1]].flip ^= 1;
-            nod.flip = 0;
-        }
+        tree[u].sz = tree[l].sz + tree[r].sz + tree[u].szi + 1;
     }
     inline int dir(int u)
     {
@@ -93,16 +80,6 @@ struct LCT
     }
     void splay(int u)
     {
-        static int up[MAXN];
-        int tot = 0;
-        for (int x = u;; x = tree[x].fa)
-        {
-            up[tot++] = x;
-            if (isroot(x))
-                break;
-        }
-        while (tot--)
-            pushdown(up[tot]);
         while (!isroot(u))
         {
             int fa = tree[u].fa;
@@ -116,60 +93,40 @@ struct LCT
         for (int rson = 0; u; rson = u, u = tree[u].fa)
         {
             splay(u);
-            tree[u].szi -= tree[rson].sz;
+            tree[u].szi -= tree[rson].sz; // 维护虚儿子信息
             tree[u].szi += tree[tree[u].son[1]].sz;
             tree[u].son[1] = rson;
             pushup(u);
         }
     }
-    void makeroot(int u)
-    {
-        access(u);
-        splay(u);
-        tree[u].flip ^= 1;
-    }
     int findroot(int u)
     {
         access(u);
         splay(u);
-        while (true)
-        {
-            pushdown(u);
-            if (!tree[u].son[0])
-                return u;
+        while (tree[u].son[0])
             u = tree[u].son[0];
-        }
+        return u;
     }
-    void split(int x, int y)
+    void link(int x, int y) // 连有向边，y为父节点
+    {                       // 维护的是有根树，不能使用makeroot，注意写法上的区别
+        access(y), splay(y), splay(x);
+        tree[x].fa = y;
+        tree[y].szi += tree[x].sz; // 维护y的虚儿子信息
+        pushup(y);
+    }
+    void cut(int x, int y) // 删有向边，y为父节点
     {
-        makeroot(x);
-        access(y);
-        splay(y);
+        access(x), splay(y);
+        tree[y].son[1] = tree[x].fa = 0;
+        pushup(y);
     }
-    void link(int x, int y)
-    {
-        makeroot(x);
-        if (findroot(y) != x)
-        {
-            tree[x].fa = y;
-            tree[y].szi += tree[x].sz;
-        }
-    }
-    void cut(int x, int y)
-    {
-        split(x, y);
-        if (tree[y].son[0] == x)
-        {
-            tree[x].fa = tree[y].son[0] = 0;
-            pushup(y);
-        }
-    }
-} lct[2];
+} lct[2]; // lct[0]维护黑点组成的动态树，lct[1]维护白点的
 
 int color[MAXN], fa[MAXN];
 void dfs(int u, int pre)
 {
     fa[u] = pre;
+    lct[0].link(u, pre); // lct[0]中，u与父节点有边，表示u为黑色
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
@@ -186,20 +143,18 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     int n;
-    readi(n);
-    rep(i, 1, n) lct[0].tree[i].sz = lct[1].tree[i].sz = 1;
+    readi(n); // 节点数
+    rep(i, 1, n + 1) lct[0].tree[i].sz = lct[1].tree[i].sz = 1;
     clr(head, -1), edgeid = 0;
     repne(i, 1, n)
     {
         int u, v;
         readi(u, v);
         addedge(u, v), addedge(v, u);
-        lct[0].link(u, v);
     }
-    dfs(1, n + 1);
-    lct[0].link(1, n + 1);
+    dfs(1, n + 1); // 规定根节点1的父节点为(n+1)
     int q;
-    readi(q);
+    readi(q); // 询问数
     while (q--)
     {
         int op, x;
@@ -207,8 +162,9 @@ int main()
         if (op == 0)
         {
             int c = color[x];
-            lct[c].makeroot(x);
-            printf("%d\n", lct[c].tree[x].size() - 1);
+            int r = lct[c].findroot(x);
+            lct[c].splay(r);
+            printf("%d\n", lct[c].tree[lct[c].tree[r].son[1]].sz);
         }
         else if (op == 1)
         {
