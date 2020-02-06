@@ -47,14 +47,20 @@ inline void pushup(int u) // 计算要维护的信息
     tree[u].sz = tree[l].sz + tree[r].sz + 1;
     tree[u].ans = (tree[l].ans + tree[r].ans + tree[u].val) % MOD;
 }
-void pushadd(int u, ll lazy) // 传递加法标记
+inline void pushflip(int u)
+{
+    Node &nod = tree[u];
+    swap(nod.son[0], nod.son[1]);
+    nod.flip ^= 1;
+}
+inline void pushadd(int u, ll lazy) // 传递加法标记
 {
     Node &nod = tree[u];
     nod.val = (nod.val + lazy) % MOD;
     nod.ans = (nod.ans + lazy * nod.sz) % MOD;
     nod.add = (nod.add + lazy) % MOD;
 }
-void pushmul(int u, ll lazy) // 传递乘法标记
+inline void pushmul(int u, ll lazy) // 传递乘法标记
 {
     Node &nod = tree[u];
     nod.val = (nod.val * lazy) % MOD;
@@ -67,8 +73,7 @@ inline void pushdown(int u) // 传递所有标记
     Node &nod = tree[u];
     if (nod.flip == 1)
     {
-        swap(nod.son[0], nod.son[1]);
-        tree[nod.son[0]].flip ^= 1, tree[nod.son[1]].flip ^= 1;
+        pushflip(nod.son[0]), pushflip(nod.son[1]);
         nod.flip = 0;
     }
     if (nod.mul != 1)
@@ -136,7 +141,7 @@ void makeroot(int u) // 使u成为原树的根节点
 {                    // makeroot操作后，u也是SplayTree的根节点，u无左儿子
     access(u);
     splay(u);
-    tree[u].flip ^= 1;
+    pushflip(u);
 }
 int findroot(int u) // 返回u在原树中的根节点
 {                   // findroot操作后，u为SplayTree的根节点
