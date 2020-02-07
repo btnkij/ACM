@@ -2869,22 +2869,20 @@ int main()
 
 
 
-### 动态树
-
-#### Link-Cut-Tree
+### 动态树 Link-Cut-Tree
 
 ```c++
 /**
 * Number:luogu1501
 * Title:[国家集训队]Tree II
 * Status:AC
-* Tag:[lct]
+* Tag:[LCT]
 * desc: 在动态连边和删边的树上，维护链上的节点权值和
 **/
 
 const int MAXN = 1e5 + 10;
 const int MOD = 51061;
-struct Node
+struct Node // LCT维护无根树，有换根操作
 {
     int flip, fa, son[2]; // LCT节点必要的信息：flip-翻转标记 fa-父节点 son[]-左右儿子
     ll val, ans;          // val-节点的值 ans-子树的答案
@@ -2897,14 +2895,20 @@ inline void pushup(int u) // 计算要维护的信息
     tree[u].sz = tree[l].sz + tree[r].sz + 1;
     tree[u].ans = (tree[l].ans + tree[r].ans + tree[u].val) % MOD;
 }
-void pushadd(int u, ll lazy) // 传递加法标记
+inline void pushflip(int u)
+{
+    Node &nod = tree[u];
+    swap(nod.son[0], nod.son[1]);
+    nod.flip ^= 1;
+}
+inline void pushadd(int u, ll lazy) // 传递加法标记
 {
     Node &nod = tree[u];
     nod.val = (nod.val + lazy) % MOD;
     nod.ans = (nod.ans + lazy * nod.sz) % MOD;
     nod.add = (nod.add + lazy) % MOD;
 }
-void pushmul(int u, ll lazy) // 传递乘法标记
+inline void pushmul(int u, ll lazy) // 传递乘法标记
 {
     Node &nod = tree[u];
     nod.val = (nod.val * lazy) % MOD;
@@ -2915,10 +2919,9 @@ void pushmul(int u, ll lazy) // 传递乘法标记
 inline void pushdown(int u) // 传递所有标记
 {
     Node &nod = tree[u];
-    if (nod.flip == 1) // 翻转标记表示当前节点需要翻转，操作son[]时记得先pushdown
+    if (nod.flip == 1)
     {
-        swap(nod.son[0], nod.son[1]);
-        tree[nod.son[0]].flip ^= 1, tree[nod.son[1]].flip ^= 1;
+        pushflip(nod.son[0]), pushflip(nod.son[1]);
         nod.flip = 0;
     }
     if (nod.mul != 1)
@@ -2985,7 +2988,7 @@ void makeroot(int u) // 使u成为原树的根节点
 {                    // makeroot操作后，u也是SplayTree的根节点，u无左儿子
     access(u);
     splay(u);
-    tree[u].flip ^= 1;
+    pushflip(u);
 }
 int findroot(int u) // 返回u在原树中的根节点
 {                   // findroot操作后，u为SplayTree的根节点
@@ -3022,7 +3025,7 @@ void cut(int x, int y) // 断开x、y两个节点，已连通则无效果
 
 int main()
 {
-    int n, q; readi(n, q); // n-节点数 q-询问数
+    int n, q;  readi(n, q); // n-节点数 q-询问数
     rep(i, 1, n) tree[i].val = tree[i].ans = tree[i].mul = tree[i].sz = 1;
     repne(i, 1, n)
     {
@@ -3031,13 +3034,12 @@ int main()
     }
     while (q--)
     {
-        char op[4];
-        reads(op);
+        char op[4]; reads(op);
         if (op[0] == '+') // 链u-v所有节点权值+c
         {
             int u, v, c; readi(u, v, c);
-            split(u, v);	// 先分离链u-v到单独的SplayTree中
-            pushadd(v, c);	// 再将加法标记作用于根节点
+            split(u, v);	// 先分离出链u-v
+            pushadd(v, c);	// 再将加法作用于根节点
         }
         else if (op[0] == '-') // 删边u1-v1，再加边u2-v2
         {
@@ -3053,8 +3055,181 @@ int main()
         else if (op[0] == '/') // 询问链u-v节点的权值和
         {
             int u, v; readi(u, v);
-            split(u, v);
+            split(u, v); // 分离出询问链后答案在根节点v上
             printf("%lld\n", tree[v].ans);
+        }
+    }
+    return 0;
+}
+```
+
+
+
+```c++
+/**
+* Number:spoj16580
+* Title:QTREE7 - Query on a tree VII
+* Status:AC
+* Tag:[LCT]
+* desc: 树上有黑白两色点，询问节点的同色连通块中的最大点权
+**/
+
+const int MAXN = 1e5 + 10;
+struct Edge // 链式前向星模板
+{
+    int from, to, nxt;
+} edges[MAXN * 2];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = {from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+struct Heap
+{
+    priority_queue<int> open, close;
+    void push(int val) { open.push(val); }
+    void pop(int val) { close.push(val); }
+    int top()
+    {
+        while (!close.empty() && open.top() == close.top())
+            open.pop(), close.pop();
+        return open.size() ? open.top() : -INF; // maxwi为空时返回-INF
+    }
+};
+
+int w[MAXN]; // 节点的权值
+struct Node  // 有根树，不需要flip翻转标记
+{
+    int fa, son[2]; // LCT必要节点信息：fa-父节点 son[]-左右儿子
+    int maxw;       // 实节点的最大权值
+    Heap maxwi;     // 虚节点的最大权值，注意在access虚实转换时维护
+};
+struct LCT // LCT维护有根树，注意不能makeroot换根
+{
+    Node tree[MAXN];
+    inline void pushup(int u) // 更新maxw
+    {
+        Node &nod = tree[u];
+        nod.maxw = max(
+            max(w[u], nod.maxwi.top()),
+            max(tree[nod.son[0]].maxw, tree[nod.son[1]].maxw));
+    }
+    inline int dir(int u)
+    {
+        return tree[tree[u].fa].son[1] == u;
+    }
+    inline bool isroot(int u)
+    {
+        int *son = tree[tree[u].fa].son;
+        return son[0] != u && son[1] != u;
+    }
+    inline void rotate(int u)
+    {
+        int fa = tree[u].fa, dfa = dir(u);
+        int ffa = tree[fa].fa, dffa = dir(fa);
+        int sub = tree[u].son[dfa ^ 1];
+        tree[u].fa = ffa;
+        if (!isroot(fa))
+            tree[ffa].son[dffa] = u;
+        tree[u].son[dfa ^ 1] = fa, tree[fa].fa = u;
+        tree[fa].son[dfa] = sub, tree[sub].fa = fa;
+        pushup(fa), pushup(u);
+    }
+    void splay(int u)
+    {
+        while (!isroot(u))
+        {
+            int fa = tree[u].fa;
+            if (!isroot(fa))
+                rotate(dir(u) == dir(fa) ? fa : u);
+            rotate(u);
+        }
+    }
+    void access(int u)
+    {
+        for (int rson = 0; u; rson = u, u = tree[u].fa)
+        {
+            splay(u);
+            if (rson) // 维护虚儿子的信息
+                tree[u].maxwi.pop(tree[rson].maxw);
+            if (tree[u].son[1])
+                tree[u].maxwi.push(tree[tree[u].son[1]].maxw);
+            tree[u].son[1] = rson;
+            pushup(u);
+        }
+    }
+    int findroot(int u)
+    {
+        access(u), splay(u);
+        while (tree[u].son[0])
+            u = tree[u].son[0];
+        return u;
+    }
+    void link(int x, int y) // 连有向边，y为父节点
+    {                       // 维护的是有根树，不能使用makeroot，注意写法上的区别
+        access(y), splay(y), splay(x);      // x无父节点，fa一定为空，不需要access(x)
+        tree[x].fa = y, tree[y].son[1] = x; // 有向树上可以直接连实边
+        pushup(y);
+    }
+    void cut(int x, int y) // 删有向边，y为父节点
+    {
+        access(x), splay(y);
+        tree[y].son[1] = tree[x].fa = 0;
+        pushup(y);
+    }
+} lct[2]; // lct[0]维护黑点组成的动态树，lct[1]维护白点的
+
+int color[MAXN], fa[MAXN]; // color[]-节点的颜色 fa[]-原树中的父节点
+void build(int u, int pre)
+{
+    fa[u] = pre;
+    lct[color[u]].link(u, pre); // 节点的颜色记录在连向父节点的边上
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        if (v == pre) continue;
+        build(v, u);
+    }
+}
+
+int main()
+{
+    int n; readi(n); // 节点数
+    clr(head, -1), edgeid = 0;
+    repne(i, 1, n)
+    {
+        int u, v; readi(u, v);
+        addedge(u, v), addedge(v, u);
+    }
+    rep(i, 1, n) readi(color[i]); // 读入每个节点的颜色
+    rep(i, 1, n) readi(w[i]);     // 读入每个节点的权值
+    w[0] = w[n + 1] = -INF;
+    rep2(i, 0, 1, j, 0, n + 1) lct[i].tree[j].maxw = w[j];
+    build(1, n + 1); // 根据有根树建LCT，规定根节点1的父节点为(n+1)
+    int q; readi(q); // 询问数
+    while (q--)
+    {
+        int op, u;
+        readi(op, u);
+        LCT &T = lct[color[u]];
+        if (op == 0) // 询问u的同色连通块的最大点权
+        {
+            int r = T.findroot(u);
+            T.splay(r); // 根一定与u不同色，右儿子是答案
+            printf("%d\n", T.tree[T.tree[r].son[1]].maxw);
+        }
+        else if (op == 1) // 切换u的颜色
+        {
+            T.cut(u, fa[u]);
+            lct[color[u] ^= 1].link(u, fa[u]);
+        }
+        else if (op == 2) // 修改u的权值
+        {
+            T.access(u), T.splay(u);                  // 将u转到根
+            readi(w[u]);                              // 读入新的权值
+            T.pushup(u), lct[color[u] ^ 1].pushup(u); // 注意pushup另一棵LCT
         }
     }
     return 0;
