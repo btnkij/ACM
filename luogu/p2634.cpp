@@ -32,7 +32,6 @@ inline int reads(char *s1) { return scanf("%s", s1); }
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
 const int MAXN = 2e4 + 10;
-
 struct Edge
 {
     int from, to, w, nxt;
@@ -44,8 +43,8 @@ void addedge(int from, int to, int w)
     head[from] = edgeid++;
 }
 
-int root, tot, rk[MAXN], maxrk; // root-当前的重心 tot-当前子树的总节点数
-bool cg[MAXN]; // 是否是重心
+int root, maxrk, rk[MAXN], totrk; // rk[]-子树的秩 totrk-当前子树的节点数
+bool cg[MAXN];                    // 是否是分治过的重心
 void getcg(int u, int pre)
 {
     rk[u] = 1;
@@ -59,12 +58,12 @@ void getcg(int u, int pre)
         tmp = max(tmp, rk[v]);
         rk[u] += rk[v];
     }
-    tmp = max(tmp, tot - rk[u]);
+    tmp = max(tmp, totrk - rk[u]);
     if (tmp < maxrk)
         root = u, maxrk = tmp;
 }
-int a, b; // 是3的倍数的方案数，总方案数
-int allcnt[4], cnt[4]; // 之前所有子树中、当前子树中模3为i的方案数
+int a, b;                         // 是3的倍数的方案数，总方案数
+int allcnt[4], cnt[4];            // 之前所有子树中、当前子树中模3为i的方案数
 void dfs(int u, int sum, int pre) // 当前节点，root到u的链权值之和，父节点
 {
     sum = (sum % 3 + 3) % 3;
@@ -83,13 +82,13 @@ void dfs(int u, int sum, int pre) // 当前节点，root到u的链权值之和�
         dfs(v, t, u);
     }
 }
-void solve(int u, int nn) // u-子树中任意点 nn-子树的总节点数
+void solve(int u, int totrk) // u-子树中任意点 totrk-子树的总节点数
 {
-    maxrk = INF, tot = nn;
+    maxrk = INF, ::totrk = totrk; // 注意getcg前的全局变量初始化
     getcg(u, -1);
-    cg[root] = true; // 计算当前子树的重心
+    cg[u = root] = true; // root是全局变量，为防止被修改，getcg后将root复制给u
     clr(allcnt, 0);
-    for (int i = head[root]; ~i; i = edges[i].nxt)
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
         if (cg[v])
@@ -99,16 +98,18 @@ void solve(int u, int nn) // u-子树中任意点 nn-子树的总节点数
         for (int i = 0; i < 3; i++)
             allcnt[i] += cnt[i];
     }
-    for (int i = head[root]; ~i; i = edges[i].nxt) // 分治root的每个子树
+    for (int i = head[u]; ~i; i = edges[i].nxt) // 分治root的每个子树
     {
         int v = edges[i].to;
         if (cg[v])
             continue;
-        solve(v, rk[v] > rk[root] ? nn - rk[root] : rk[v]);
+        if (rk[v] > rk[u]) // root上方的子树rk不正确，需在这里修正
+            rk[v] = totrk - rk[u];
+        solve(v, rk[v]);
     }
 }
 
-int gcd(int a, int b)
+int gcd(int a, int b) // GCD模板
 {
     return b == 0 ? a : gcd(b, a % b);
 }
@@ -120,15 +121,14 @@ int main()
 #endif
     int n;
     readi(n); // 节点数
-    clr(head, -1);
+    clr(head, -1), edgeid=0; // 链式前向星的初始化
     repne(i, 1, n)
     {
-        int x, y, w; // 边的起点，终点，权值
-        readi(x, y, w);
-        addedge(x, y, w);
-        addedge(y, x, w);
+        int x, y, w;
+        readi(x, y, w); // 边的起点，终点，权值
+        addedge(x, y, w), addedge(y, x, w);
     }
-    solve(1, n);
+    solve(1, n); // 点分治
     b = n * n;
     a = a * 2 + n;
     int d = gcd(a, b);
