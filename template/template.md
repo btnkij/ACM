@@ -142,15 +142,13 @@ void merge_sort(int *begin, int *end) // 传首尾指针，左闭右开区间
 
 ### CDQ分治
 
-```c++
-/**
-* Number:p3810
-* Title:【模板】三维偏序（陌上花开）
-* Status:AC
-* Tag:[cdq, 分治, 归并排序]
-* desc:定义三维偏序A(x1,y1,z1)<=B(x2,y2,z2)当且仅当x1<=x2 and y1<=y2 and z1<=z2。求排序为0..n-1的三元组个数。
-**/
+【题号】LUOGU3810
 
+【题目】定义三维偏序$A(x_1,y_1,z_1) \leq B(x_2,y_2,z_2)$当且仅当$x_1 \leq x_2 \bigwedge y_1 \leq y_2 \bigwedge z_1 \leq z_2$。求比自身小的三元组个数分别为$0 \dots n-1$的三元组个数。
+
+【思路】三元组按照第0维排序。归并排序第1维，每轮归并后，统计右侧的每一个三元组在左侧有多少个比它小的，可使用树状数组统计，也可以再次应用CDQ分治计算。如果再次嵌套CDQ分治，先标记1维排序后的左右元素，第2维归并排序后只统计1维排序时的左边元素对右边的贡献。
+
+```c++
 const int MAXN = 2e5 + 10; // 最大三元组个数
 const int MAX_DIM = 2; // 第0维排序，只用CDQ分治剩下的两维
 struct Node
@@ -163,27 +161,30 @@ void cdq(int beg, int end, int dim)
     if (end - beg <= 1)
         return;
     int mid = (beg + end) >> 1;
-    cdq(beg, mid, dim); // 分治左部的dim维
-    cdq(mid, end, dim); // 分治右部的dim维
+    cdq(beg, mid, dim); // 分治左部的第dim维
+    cdq(mid, end, dim); // 分治右部的第dim维
+    // cur[]-当前序列 nxt[]-保存归并后的序列
     pair<Node *, int> *cur = buf[dim], *nxt = buf[dim + 1];
     int i = beg, j = mid, k = beg, cnt = 0;
-    while (i < mid || j < end) // 按照dim维归并排序
+    while (i < mid || j < end) // 按照第dim维归并排序
     {
         if (j == end || i < mid && cur[i].first->v[dim] <= cur[j].first->v[dim])
         {
             nxt[k] = cur[i];
+            // 如果是第一层分治或者拥有左部标记
             if (dim == 1 || dim < MAX_DIM && cur[i].second == 1)
-                nxt[k].second = 1; // 标记原来属于左部的元素
-            if (dim == MAX_DIM && nxt[k].second == 1)
+                nxt[k].second = 1; // 继续标记为左部元素
+            if (dim == MAX_DIM && nxt[k].second == 1) // 到达最深的CDQ，开始统计答案
                 cnt += nxt[k].first->sz;
             i++, k++;
         }
         else
         {
             nxt[k] = cur[j];
+            // 如果是第一层分治或者拥有右部标记
             if (dim == 1 || dim < MAX_DIM && cur[j].second == 2)
-                nxt[k].second = 2; // 标记原来属于右部的元素
-            if (dim == MAX_DIM && nxt[k].second == 2)
+                nxt[k].second = 2; // 继续标记为右部元素
+            if (dim == MAX_DIM && nxt[k].second == 2) // 到达最深的CDQ，开始统计答案
                 nxt[k].first->ans += cnt; // 左部比nxt[k]小的三元组有cnt个
             j++, k++;
         }
@@ -239,15 +240,13 @@ int main()
 
 ### 整体二分
 
-```c++
-/**
-* Number:p1527
-* Title:[国家集训队]矩阵乘法
-* Status:AC
-* Tag:[整体二分]
-* desc:静态矩阵第k小
-**/
+【题号】LUOGU1527
 
+【题目】多组询问，求静态矩阵第k小
+
+【思路】对于单次询问，简单的二分可做。多组询问采用整体二分的方法，同时二分答案区间和答案在这个区间的询问。使用二维树状数组快速统计矩阵中小于等于一个数的数字个数。
+
+```c++
 // 二维树状数组模板
 int n, tree[510][510]; // n-方阵的阶数
 inline int lowbit(int x)
@@ -346,22 +345,20 @@ int main()
 
 ### Dancing Links
 
-```c++
-/**
-* Number:p1784
-* Title:数独
-* Status:AC
-* Tag:[dancing links]
-* desc: 9*9数独
-**/
+【题号】LUOGU1784
 
+【题目】填写数独
+
+【思路】精确覆盖问题是指：一个二进制串可以覆盖为1的位对应的列，求一种选择一些二进制串恰好覆盖所有列的方案。对于数独问题，为精确覆盖所有列的问题，使用DLX算法求解。规定第$i\times9+j$列表示第$i$行数字$j$已被使用，第$81+i\times9+j$列表示第$i$列数字$j$已被使用，第$81\times2+i\times9+j$表示第$i$个九宫数字$j$已被使用，第$81\times3+i\times9+j$列表示第$i$行$j$列已被填充，“第$x$行$y$列填写数字$i$”的方案对应一个二进制串。
+
+```c++
 const int MAX_ROW = 81 * 9;
 const int MAX_COL = 81 * 4;
 struct dancing_links
 {
     struct dlx_node
     {
-        int x, y;                        // 行号，列号
+        int x, y; // 行号，列号
         dlx_node *lef, *rig, *up, *down; // 循环十字链表
     } nodes[MAX_ROW * MAX_COL + MAX_ROW + 10];
     dlx_node *row[MAX_ROW + 10], *col[MAX_COL + 10], *tail; // 行首，列首，尾节点
@@ -439,7 +436,7 @@ int main()
     rep2(i, 1, 9, j, 1, 9) readi(suduku[i][j]);
     dlx.init(81 * 4); // 初始化，待覆盖的列有81*4个
     int tot = 0;
-    rep2(x, 1, 9, y, 1, 9) rep(i, 1, 9)
+    rep2(x, 1, 9, y, 1, 9) rep(i, 1, 9) // “第x行y列填写i”对应的二进制串
     {
         if (suduku[x][y] == 0 || i == suduku[x][y]) // 0-待填充，非零-已知数字
         {
@@ -469,29 +466,23 @@ int main()
 
 ### 数位DP
 
-```c++
-/**
-* Number:loj10167
-* Title:「一本通 5.3 练习 2」不要 62
-* Status:AC
-* Tag:[数位dp]
-* desc: 求[a, b]之间不含"4"和"62"的数的个数
-**/
+【题号】LIBREOJ10167
 
-vector<int> num;
-int dp[20][20];
-int dfs(int dep, int pre, bool bound) // 当前填第几个数字，前一个数字，是否到达上界
+【题目】求[a, b]之间不含"4"和"62"的数的个数
+
+```c++
+vector<int> num; // 保存数字的每一位
+int dp[20][20];  // 记忆化
+int dfs(int dep, int pre, bool bound) // dep-当前填第几个数字 pre-前一个数字 lim-是否到达上界
 {
-    if (dep == -1)
-        return 1;
+    if (dep == -1) return 1;
     if (!bound && dp[dep][pre] != -1)
         return dp[dep][pre];
     int lim = bound ? num[dep] : 9;
     int ans = 0;
     rep(i, 0, lim)
     {
-        if (i == 4 || pre == 6 && i == 2)
-            continue;
+        if (i == 4 || pre == 6 && i == 2) continue;
         ans += dfs(dep - 1, i, bound && i == lim);
     }
     if (!bound)
@@ -521,14 +512,9 @@ int main()
 
 ### 树型依赖背包
 
-```c++
-/**
-* Number:hdu1561
-* Title:The more, The Better
-* Status:AC
-* Tag:[dp, 树型依赖背包]
-**/
+【题号】HDU1561
 
+```c++
 struct Edge
 {
     int from, to, nxt;
@@ -585,15 +571,11 @@ int main()
 
 ### 虚树优化的树型DP
 
-```c++
-/**
-* Number:p2495
-* Title:[SDOI2011]消耗战
-* Status:AC
-* Tag:[虚树, 树型dp, lca]
-* desc: 求所有询问点均不能到达根节点的最小割
-**/
+【题号】LUOGU2495
 
+【题目】求所有询问点均不能到达根节点的最小割
+
+```c++
 const int MAXN = 251000;
 struct Edge
 {
@@ -952,7 +934,9 @@ int nxt(int root, int val)
 }
 ```
 
-#### FHQTreap 无旋转Treap
+
+
+#### FHQ Treap
 
 ```c++
 template<typename T, int MAXN>
@@ -1089,7 +1073,9 @@ struct Treap
 };
 ```
 
-#### SplayTree
+
+
+#### Splay Tree
 
 ```c++
 template <typename T, int MAXN>
@@ -1228,6 +1214,8 @@ struct SplayTree
 #undef root
 };
 ```
+
+
 
 #### 替罪羊树 Scapegoat Tree
 
@@ -1375,18 +1363,14 @@ struct Scapegoat_Tree
 
 ### 树套树
 
-```c++
-/**
-* Number:p3380
-* Title:【模板】二逼平衡树（树套树）
-* Status:AC
-* Tag:[树套树]
-**/
+【题号】LUOGU3380
 
-// Treap模板
-struct Node
+【题目】在指定区间中询问排名、前驱、后继等信息
+
+```c++
+struct Node // Treap模板
 {
-    // 左右儿子，秩，重复次数，随机权值，值
+    // son[]-左右儿子 size-秩 cnt-重复次数 prior-随机权值 val-值
     int son[2], size, cnt, prior, val;
 } tree[10000000];
 int nodeid;
@@ -1427,8 +1411,7 @@ void insert(int &root, int val)
 }
 void remove(int &root, int val)
 {
-    if (root == 0)
-        return;
+    if (root == 0) return;
     else if (tree[root].val == val)
     {
         int l = tree[root].son[0], r = tree[root].son[1];
@@ -1481,8 +1464,7 @@ int kth(int root, int k)
         if (tree[m.son[0]].size >= k)
             root = m.son[0];
         k -= tree[m.son[0]].size;
-        if (m.cnt >= k)
-            return m.val;
+        if (m.cnt >= k) return m.val;
         k -= m.cnt;
         root = m.son[1];
     }
@@ -1490,8 +1472,7 @@ int kth(int root, int k)
 }
 int prev(int root, int val)
 {
-    if (root == 0)
-        return -2147483647;
+    if (root == 0) return -2147483647;
     Node &m = tree[root];
     if (m.val >= val)
         return prev(m.son[0], val);
@@ -1499,8 +1480,7 @@ int prev(int root, int val)
 }
 int nxt(int root, int val)
 {
-    if (root == 0)
-        return 2147483647;
+    if (root == 0) return 2147483647;
     Node &m = tree[root];
     if (m.val <= val)
         return nxt(m.son[1], val);
@@ -1512,11 +1492,8 @@ int seg[50010 << 2]; // 线段树
 void build(int p, int l, int r)
 {
     for (int i = l; i <= r; i++)
-    {
-        insert(seg[p], arr[i]);
-    }
-    if (l == r)
-        return;
+    	insert(seg[p], arr[i]);
+    if (l == r) return;
     int mid = (l + r) >> 1;
     build(p << 1, l, mid);
     build(p << 1 | 1, mid + 1, r);
@@ -1583,14 +1560,12 @@ int query_nxt(int p, int l, int r, int ql, int qr, int qval)
 int main()
 {
     srand(time(NULL));
-    int n, m;
-    readi(n, m); // 序列长度，操作次数
+    int n, m; readi(n, m); // 序列长度，操作次数
     rep(i, 1, n) readi(arr[i]); // 要维护的序列
     build(1, 1, n);
     while (m--)
     {
-        int op;
-        readi(op);
+        int op; readi(op);
         int l, r, k, pos;
         switch (op)
         {
@@ -1621,24 +1596,22 @@ int main()
 }
 ```
 
+
+
 ### 可持久化线段树
 
-```c++
-/**
-* Number:p3834
-* Title:【模板】可持久化线段树 1（主席树）
-* Status:AC
-* Tag:[可持久化, 主席树, 权值线段树]
-* desc: 静态区间第k小
-**/
+【题号】LUOGU3834
 
+【题目】静态区间第k小
+
+```c++
 const int MAXN = 2e5 + 10;
 struct Node
 {
     int sum, lc, rc; // 计数，左右儿子编号
 } tree[MAXN * 20]; // 空间复杂度O(nlogn)
 int root[MAXN], rootid; // 根节点，版本数量
-/*// 建树
+/* // 建树
 void build(int &u, int lt, int rt)
 {
     u = ++rootid;
@@ -1704,16 +1677,13 @@ int main()
 }
 ```
 
+
+
 ### 可持久化平衡树
 
-```c++
-/**
-* Number:p3835
-* Title:【模板】可持久化平衡树
-* Status:AC
-* Tag:[可持久化, fhq treap]
-**/
+【题号】LUOGU3835
 
+```c++
 const int MAXN = 1e6 + 10;
 struct Node // FHQTreap模板
 {
@@ -1732,7 +1702,8 @@ int makenode(int val)
 }
 void maintain(int p)
 {
-    tree[p].size = tree[tree[p].son[0]].size + tree[tree[p].son[1]].size + tree[p].cnt;
+    tree[p].size = 
+        tree[tree[p].son[0]].size + tree[tree[p].son[1]].size + tree[p].cnt;
 }
 void split(int val, int p, int &l, int &r)
 {
@@ -1756,8 +1727,7 @@ void split(int val, int p, int &l, int &r)
 }
 int merge(int l, int r)
 {
-    if (l == 0 || r == 0)
-        return l | r;
+    if (l == 0 || r == 0) return l | r;
     int p;
     if (tree[l].prior < tree[r].prior)
     {
@@ -1777,10 +1747,8 @@ void insert(int &root, int val)
     int l, m, r;
     split(val, root, l, r);
     split(val - 1, l, l, m);
-    if (m)
-        tree[m].cnt++, tree[m].size++;
-    else
-        m = makenode(val);
+    if (m) tree[m].cnt++, tree[m].size++;
+    else m = makenode(val);
     root = merge(merge(l, m), r);
 }
 void remove(int &root, int val)
@@ -1790,10 +1758,8 @@ void remove(int &root, int val)
     split(val - 1, l, l, m);
     if (m)
     {
-        if (tree[m].cnt == 1)
-            m = 0;
-        else
-            tree[m].cnt--, tree[m].size--;
+        if (tree[m].cnt == 1) m = 0;
+        else tree[m].cnt--, tree[m].size--;
     }
     root = merge(merge(l, m), r);
 }
@@ -1826,8 +1792,7 @@ int prev(int &root, int val)
 {
     int l, r, p;
     split(val - 1, root, l, r);
-    for (p = l; tree[p].son[1]; p = tree[p].son[1])
-        ;
+    for (p = l; tree[p].son[1]; p = tree[p].son[1]);
     root = merge(l, r);
     return tree[p].val;
 }
@@ -1835,8 +1800,7 @@ int nxt(int &root, int val)
 {
     int l, r, p;
     split(val, root, l, r);
-    for (p = r; tree[p].son[0]; p = tree[p].son[0])
-        ;
+    for (p = r; tree[p].son[0]; p = tree[p].son[0]);
     root = merge(l, r);
     return tree[p].val;
 }
@@ -1845,8 +1809,7 @@ int root[MAXN], ver;
 int main()
 {
     srand(233333);
-    int n;
-    readi(n);
+    int n; readi(n);
     insert(root[0], -2147483647);
     insert(root[0], 2147483647);
     for (ver = 1; ver <= n; ver++)
@@ -1862,7 +1825,7 @@ int main()
         case 2: // 删除x数(若有多个相同的数，因只删除一个，如果没有请忽略该操作)
             remove(root[ver], x);
             break;
-        case 3: // 查询x数的排名(排名定义为比当前数小的数的个数+1。若有多个相同的数，因输出最小的排名)
+        case 3: // 查询x数的排名
             printf("%d\n", order(root[ver], x) - 1);
             break;
         case 4: // 查询排名为x的数
@@ -1880,16 +1843,11 @@ int main()
 }
 ```
 
+
+
 ```c++
-/**
-* Number:p3835
-* Title:【模板】可持久化平衡树
-* Status:AC
-* Tag:[可持久化线段树, 二分]
-**/
-
+// 另解：可持久化权值线段树+二分
 const int MAXN=5e5+10;
-
 struct Node
 {
     Node *lson,*rson;
@@ -1960,26 +1918,26 @@ int main()
         int k;
         switch(opt[i])
         {
-        case 1:
+        case 1: // 插入
             root[i]=update(root[v[i]],1,tot-1,id,1);
             break;
-        case 2:
+        case 2: // 删除
             root[i]=update(root[v[i]],1,tot-1,id,-1);
             break;
-        case 3:
+        case 3: // 排名
             root[i]=root[v[i]];
             printf("%d\n",query(root[v[i]],1,tot-1,1,id-1));
             break;
-        case 4:
+        case 4: // 第k小
             root[i]=root[v[i]];
             printf("%d\n",nth(root[v[i]],1,tot-1,x[i+1]));
             break;
-        case 5:
+        case 5: // 前驱
             root[i]=root[v[i]];
             k=query(root[v[i]],1,tot-1,1,id-1);
             printf("%d\n",nth(root[v[i]],1,tot-1,k-1));
             break;
-        case 6:
+        case 6: // 后继
             root[i]=root[v[i]];
             k=query(root[v[i]],1,tot-1,1,id);
             printf("%d\n",nth(root[v[i]],1,tot-1,k));
@@ -1990,25 +1948,22 @@ int main()
 }
 ```
 
-### 左偏树 可并堆
+
+
+### 可并堆（待整理）
+
+【题号】LUOGU3377
+
+【题目】维护n个小根堆，支持合并堆、删除最小值的操作
 
 ```c++
-/**
-* Number:p3377
-* Title:【模板】左偏树（可并堆）
-* Status:AC
-* Tag:[左偏树, 可并堆]
-* desc: 维护n个小根堆，支持合并堆、删除最小值的操作
-**/
-
 const int MAXN = 1e5 + 10;
-
 int val[MAXN], dis[MAXN], fa[MAXN], son[MAXN][2]; // 值，深度，并查集，左右儿子
 int findr(int x)
 {
     return x == fa[x] ? x : fa[x] = findr(fa[x]);
 }
-int join(int x, int y) // 合并以x, y为根的堆, x或y作为新的根
+int join(int x, int y) // 合并以x、y为根的堆, x或y作为新的根
 {
     if (x == 0 || y == 0)
         return x | y;
@@ -2030,8 +1985,7 @@ void pop(int x) // 删除节点x, x是堆的根
 bool del[MAXN]; // 是否被删除
 int main()
 {
-    int n, m;
-    readi(n, m);
+    int n, m; readi(n, m); // 堆的个数，操作数
     dis[0] = -1;
     rep(i, 1, n)
     {
@@ -2040,23 +1994,18 @@ int main()
     }
     while (m--)
     {
-        int op;
-        readi(op);
+        int op; readi(op);
         if (op == 1) // 合并x、y所在的堆
         {
-            int x, y;
-            readi(x, y);
-            if (del[x] || del[y])
-                continue;
+            int x, y; readi(x, y);
+            if (del[x] || del[y]) continue;
             int rx = findr(x), ry = findr(y);
-            if (rx == ry) // 如果在一个堆中
-                continue;
+            if (rx == ry) continue; // 如果已经在一个堆中
             join(rx, ry);
         }
         else if (op == 2) // 删除x所在堆的最小值
         {
-            int x;
-            readi(x);
+            int x; readi(x);
             if (del[x])
                 printf("-1\n");
             else
@@ -2072,17 +2021,17 @@ int main()
 }
 ```
 
+
+
 ### K-D Tree
 
-```c++
-/**
-* Number:luogu4357
-* Title: [CQOI2016]K远点对
-* Status:AC
-* Tag:[k-d tree, 启发式搜索]
-* desc: 求平面第k远的点对的欧式距离的平方
-**/
+【题号】LUOGU4357
 
+【题目】求平面第k远的点对的欧式距离的平方
+
+【思路】建K-D Tree，维护每个划分区域的最远距离，启发式搜索。
+
+```c++
 const int MAX_DIM = 2; // 问题空间为二维平面
 int dim;               // 当前划分的维度
 
@@ -2128,11 +2077,10 @@ void init()
 }
 void build(Node *&u, Point *beg, Point *end, int dep)
 {
-    if (beg >= end)
-        return;
+    if (beg >= end) return;
     dim = dep % MAX_DIM;
     Point *mid = beg + (end - beg) / 2;
-    nth_element(beg, mid, end);
+    nth_element(beg, mid, end); // 找中位数
     u = tail++;
     u->p = *mid;
     build(u->son[0], beg, mid, dep + 1);
@@ -2166,18 +2114,18 @@ void dfs(const Node *u, const Point &p)
 
 int main()
 {
-    int n, k; // n个点，求第k远
-    readi(n, k);
+    int n, k; readi(n, k); // n个点，求第k远
     repne(i, 0, n) readi(pos[i].x[0], pos[i].x[1]);
-    init();
+    init(); // 初始化K-D Tree的一些指针
     build(root, pos, pos + n, 0);
-    repne(i, 0, k << 1) topk.push(0); // 由于对称性，一个点对会被统计两次
-    repne(i, 0, n)
-        dfs(root, pos[i]);
+    repne(i, 0, k << 1) topk.push(0); // 由于对称性，一个点对会被统计两次，所以应该求第2k远
+    repne(i, 0, n) dfs(root, pos[i]);
     printf("%lld\n", topk.top());
     return 0;
 }
 ```
+
+
 
 ### 字典树 Trie
 
@@ -2238,19 +2186,19 @@ struct Trie
 };
 ```
 
+
+
 ## 树
 
 ### DSU-On-Tree
 
-```c++
-/**
-* Number:cf600e
-* Title:Lomsat gelral
-* Status:AC
-* Tag:[DSU-On-Tree]
-* desc: 树上每个节点一种颜色，求所有子树中数量最多的颜色，多个颜色最多时输出它们的和
-**/
+【题号】CF600E
 
+【题目】树上每个节点一种颜色，求所有子树中数量最多的颜色，多个颜色最多时输出它们的和
+
+【思路】暴力DFS统计，回溯时保留重儿子的统计信息，只需重新统计轻儿子。复杂度O(nlogn)。
+
+```c++
 const int MAXN = 1e5 + 10;
 vector<int> adj[MAXN];  // 邻接表
 int c[MAXN], son[MAXN]; // 节点颜色，重儿子
@@ -2320,25 +2268,20 @@ int main()
 
 ### 最近公共祖先 LCA
 
-```c++
-/**
-* Number:loj10134
-* Title:「一本通 4.4 练习 1」Dis 
-* Status:AC
-* Tag:[lca]
-* desc:询问树上任意链的长度
-**/
+【题号】LIBEROJ10134
 
+【题目】静态维护树上链的长度
+
+```c++
 const int MAXN = 1e4 + 10;
 const int MAXM = 2e4 + 10;
 const int LOGN = 15;
-
-struct Edge
+struct Edge // 链式前向星模板
 {
     int from, to, dis, nxt;
 } edges[MAXM];
 int head[MAXN], edgeid;
-void addedge(int from, int to, int dis) // 边的起止节点，长度
+void addedge(int from, int to, int dis)
 {
     edges[edgeid] = (Edge){from, to, dis, head[from]};
     head[from] = edgeid++;
@@ -2364,7 +2307,7 @@ void dfs(int u, int pre)
     }
     tout[u] = ++dfsid;
 }
-void init_lca(int root) // lca的预处理
+void init_lca(int root) // LCA的预处理
 {
     memset(fa, 0, sizeof(fa));
     dfsid = 0;
@@ -2376,11 +2319,9 @@ bool isAncestor(int fa, int x) // fa是否是x的祖先
 }
 int lca(int x, int y) // 求x、y的最近公共祖先
 {
-    if (isAncestor(x, y))
-        return x;
-    if (isAncestor(y, x))
-        return y;
-    for (int i = LOGN - 1; i >= 0; i--)
+    if (isAncestor(x, y)) return x;
+    if (isAncestor(y, x)) return y;
+    for (int i = LOGN - 1; i >= 0; i--) // 倍增
         if (!isAncestor(fa[x][i], y))
             x = fa[x][i];
     return fa[x][0];
@@ -2388,22 +2329,19 @@ int lca(int x, int y) // 求x、y的最近公共祖先
 
 int main()
 {
-    int n, m;
-    readi(n, m); // 节点数，询问数
-    clr(head, -1);
+    int n, m; readi(n, m); // 节点数，询问数
+    clr(head, -1), edgeid = 0; // 链式前向星的初始化
     repne(i, 1, n)
     {
-        int u, v, w;
-        readi(u, v, w); // 边的起止节点，长度
-        addedge(u, v, w);
-        addedge(v, u, w);
+        int u, v, w; readi(u, v, w); // 边的起止节点，长度
+        addedge(u, v, w), addedge(v, u, w);
     }
     init_lca(1);
     while (m--)
     {
-        int u, v;
-        readi(u, v);
-        printf("%d\n", dis[u] + dis[v] - 2 * dis[lca(u, v)]); // u到v的距离
+        int u, v; readi(u, v);
+        int ans = dis[u] + dis[v] - 2 * dis[lca(u, v)]; // u到v的距离
+        printf("%d\n", ans);
     }
     return 0;
 }
@@ -2411,15 +2349,11 @@ int main()
 
 ###  树链剖分
 
-```c++
-/**
-* Number:luogu3384
-* Title:树链剖分
-* Status:AC
-* Tag:[树链剖分, 线段树]
-* desc: 树链剖分模板题
-**/
+【题号】LUOGU3384
 
+【题目】动态维护链和子树的点权和
+
+```c++
 const int MAXN = 1e5 + 10;
 struct Edge
 {
@@ -2438,8 +2372,7 @@ struct QTreeNode // 树链剖分
     int dep, sz, pos; // 深度、秩、在线段树中的位置
     int fa, son, top; // 父节点，重儿子，重链顶端节点
 } nodes[MAXN];
-int dfsid = 0;
-int rpos[MAXN];           // 线段树中i位置对应的节点编号为rpos[i]，与pos互逆
+int dfsid = 0, rpos[MAXN]; // 线段树中i位置对应的节点编号为rpos[i]，与pos互逆
 void dfs1(int u, int pre) // u-当前节点 pre-父节点
 {
     QTreeNode &cur = nodes[u];
@@ -2466,8 +2399,7 @@ void dfs2(int u, int top) // u-当前节点 top-重链顶端节点
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
-        if (v == cur.fa || v == cur.son)
-            continue;
+        if (v == cur.fa || v == cur.son) continue;
         dfs2(v, v); // 再剖轻链
     }
 }
@@ -2571,32 +2503,26 @@ ll query_chain(int n, int x, int y)
 
 int main()
 {
-    int n, m, r; // 节点数、询问数、根节点编号
-    readi(n, m, r);
+    int n, m, r; readi(n, m, r); // 节点数、询问数、根节点编号
     scanf("%lld", &mod); // 取模
     rep(i, 1, n) scanf("%lld", &nodes[i].val);
     clr(head, -1);
     repne(i, 1, n) // 建树
     {
-        int x, y;
-        readi(x, y);
+        int x, y; readi(x, y);
         addedge(x, y);
         addedge(y, x);
     }
-    dfs1(r, 0); // 两遍dfs完成树链剖分
-    dfs2(r, r);
+    dfs1(r, 0), dfs2(r, r); // 两遍dfs完成树链剖分
     build(1, 1, n); // 建线段树
     while (m--)
     {
-        int op;
-        readi(op);
-        int x, y;
-        ll z;
+        int op; readi(op);
+        int x, y; ll z;
         switch (op)
         {
         case 1: // 从x到y的链节点权值加上z
-            readi(x, y);
-            scanf("%lld", &z);
+            readi(x, y); scanf("%lld", &z);
             add_chain(n, x, y, z);
             break;
         case 2: // 查询x到y的链的和
@@ -2604,8 +2530,7 @@ int main()
             printf("%lld\n", query_chain(n, x, y));
             break;
         case 3: // 以x为根的子树节点权值加z
-            readi(x);
-            scanf("%lld", &z);
+            readi(x); scanf("%lld", &z);
             add_range(1, 1, n, nodes[x].pos, nodes[x].pos + nodes[x].sz - 1, z);
             break;
         case 4: // 查询以x为根节点的子树的节点权值和
@@ -2623,17 +2548,15 @@ int main()
 
 ### 点分治
 
-```c++
-/**
-* Number:luogu2634
-* Title:[国家集训队]聪聪可可
-* Status:AC
-* Tag:[点分治]
-* desc: 树上任选一条链，求边权和是3的倍数的概率
-**/
+【题号】LUOGU2634
 
+【题目】求树上任选一条链，链上边权和是3的倍数的概率
+
+【思路】找到树的重心，只统计跨过重心的链，然后如此分治子树。复杂度O(nlogn)。
+
+```c++
 const int MAXN = 2e4 + 10;
-struct Edge
+struct Edge // 链式前向星模板
 {
     int from, to, w, nxt;
 } edges[MAXN * 2];
@@ -2644,8 +2567,8 @@ void addedge(int from, int to, int w)
     head[from] = edgeid++;
 }
 
-int root, tot, rk[MAXN], maxrk; // root-当前的重心 tot-当前子树的总节点数
-bool cg[MAXN]; // 是否是重心
+int root, maxrk, rk[MAXN], totrk; // rk[]-子树的秩 totrk-当前子树的节点数
+bool cg[MAXN];                    // 是否是分治过的重心
 void getcg(int u, int pre)
 {
     rk[u] = 1;
@@ -2658,17 +2581,20 @@ void getcg(int u, int pre)
         tmp = max(tmp, rk[v]);
         rk[u] += rk[v];
     }
-    tmp = max(tmp, tot - rk[u]);
-    if (tmp < maxrk) root = u, maxrk = tmp;
+    tmp = max(tmp, totrk - rk[u]);
+    if (tmp < maxrk)
+        root = u, maxrk = tmp;
 }
-int a, b; // 是3的倍数的方案数，总方案数
+int a, b;              // 是3的倍数的方案数，总方案数
 int allcnt[4], cnt[4]; // 之前所有子树中、当前子树中模3为i的方案数
-void dfs(int u, int sum, int pre) // 当前节点，root到u的链权值之和，父节点
+void dfs(int u, int sum, int pre) // u-当前节点 sum-root到u的链权值之和 pre-父节点
 {
     sum = (sum % 3 + 3) % 3;
     cnt[sum]++;
-    if (sum == 0) a += allcnt[0] + 1;
-    else a += allcnt[3 - sum];
+    if (sum == 0)
+        a += allcnt[0] + 1;
+    else
+        a += allcnt[3 - sum];
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
@@ -2678,13 +2604,13 @@ void dfs(int u, int sum, int pre) // 当前节点，root到u的链权值之和�
         dfs(v, t, u);
     }
 }
-void solve(int u, int nn) // u-子树中任意点 nn-子树的总节点数
+void solve(int u, int totrk) // u-子树中任意点 totrk-子树的总节点数
 {
-    maxrk = INF, tot = nn;
+    maxrk = INF, ::totrk = totrk; // 注意getcg前的全局变量初始化
     getcg(u, -1);
-    cg[root] = true; // 计算当前子树的重心
+    cg[u = root] = true; // root是全局变量，为防止被修改，getcg后将root复制给u
     clr(allcnt, 0);
-    for (int i = head[root]; ~i; i = edges[i].nxt)
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
         if (cg[v]) continue;
@@ -2693,30 +2619,32 @@ void solve(int u, int nn) // u-子树中任意点 nn-子树的总节点数
         for (int i = 0; i < 3; i++)
             allcnt[i] += cnt[i];
     }
-    for (int i = head[root]; ~i; i = edges[i].nxt) // 分治root的每个子树
+    for (int i = head[u]; ~i; i = edges[i].nxt) // 分治root的每个子树
     {
         int v = edges[i].to;
         if (cg[v]) continue;
-        solve(v, rk[v] > rk[root] ? nn - rk[root] : rk[v]);
+        if (rk[v] > rk[u]) // root上方的子树rk不正确，需在这里修正
+            rk[v] = totrk - rk[u];
+        solve(v, rk[v]);
     }
 }
 
-int gcd(int a, int b)
+int gcd(int a, int b) // GCD模板
 {
     return b == 0 ? a : gcd(b, a % b);
 }
 int main()
 {
     int n; readi(n); // 节点数
-    clr(head, -1);
+    clr(head, -1), edgeid=0; // 链式前向星的初始化
     repne(i, 1, n)
     {
         int x, y, w; readi(x, y, w); // 边的起点，终点，权值
         addedge(x, y, w), addedge(y, x, w);
     }
-    solve(1, n);
-    b = n * n;
-    a = a * 2 + n;
+    solve(1, n); // 点分治
+    b = n * n;     // 总方案数
+    a = a * 2 + n; // 加上对称和单个节点的方案数
     int d = gcd(a, b);
     printf("%d/%d", a / d, b / d);
     return 0;
@@ -2727,15 +2655,11 @@ int main()
 
 ### 动态点分治
 
-```c++
-/**
-* Number:sp2939
-* Title:QTREE5 - Query on a tree V
-* Status:AC
-* Tag:[动态点分治]
-* desc: 多次询问树上一个点到最近白点的距离
-**/
+【题号】SPOJ2939
 
+【题目】多次询问树上一个点到最近白点的距离
+
+```c++
 const int MAXN = 1e5 + 10;
 struct Edge // 链式前向星模板
 {
@@ -2751,18 +2675,9 @@ void addedge(int from, int to)
 struct Heap // 小根堆，multiset很慢，请勿替代
 {
     priority_queue<int, vector<int>, greater<int>> open, close;
-    int size()
-    {
-        return open.size() - close.size();
-    }
-    void push(int val)
-    {
-        open.push(val);
-    }
-    void pop(int val)
-    {
-        close.push(val);
-    }
+    int size() { return open.size() - close.size(); }
+    void push(int val) { open.push(val); }
+    void pop(int val) { close.push(val); }
     int top()
     {
         while (!close.empty() && open.top() == close.top())
@@ -2871,15 +2786,11 @@ int main()
 
 ### 动态树 Link-Cut-Tree
 
-```c++
-/**
-* Number:luogu1501
-* Title:[国家集训队]Tree II
-* Status:AC
-* Tag:[LCT]
-* desc: 在动态连边和删边的树上，维护链上的节点权值和
-**/
+【题号】LUOGU1501
 
+【题目】在动态连边和删边的树上，维护链上的节点权值和
+
+```c++
 const int MAXN = 1e5 + 10;
 const int MOD = 51061;
 struct Node // LCT维护无根树，有换根操作
@@ -3065,15 +2976,13 @@ int main()
 
 
 
-```c++
-/**
-* Number:spoj16580
-* Title:QTREE7 - Query on a tree VII
-* Status:AC
-* Tag:[LCT]
-* desc: 树上有黑白两色点，询问节点的同色连通块中的最大点权
-**/
+【题号】SPOJ16580
 
+【题目】树上有黑白两色点，询问节点的同色连通块中的最大点权
+
+【思路】两个LCT维护黑树和白树，节点的颜色记录在边上。比如在黑色LCT中，一个节点与父节点连边，表示该节点是黑色。这样，连通块中除根节点外其他节点都同色，根的儿子维护了所在子树的答案。
+
+```c++
 const int MAXN = 1e5 + 10;
 struct Edge // 链式前向星模板
 {
@@ -3240,27 +3149,22 @@ int main()
 
 ## 图
 
-### 并查集/带权并查集
+### 并查集
+
+【题号】CF688C
+
+【题目】判定一个图是否是二分图，输出左右支的节点
 
 ```c++
-/**
-* Number:cf688c
-* Title:NP-Hard Problem
-* Status:AC
-* Tag:[并查集, 二分图判定]
-* desc: 判定一个图是否是二分图，输出左右支的节点
-**/
-
-int fa[100100], rel[100100]; // 父节点，与父节点的关系
-int findr(int x)
+int fa[100100], rel[100100]; // fa[]-父节点 rel[]-与父节点的关系
+int findr(int x) // 查询x所在树的根节点
 {
-    if (x == fa[x])
-        return x;
+    if (x == fa[x]) return x;
     int rx = findr(fa[x]);
-    rel[x] = rel[x] ^ rel[fa[x]];
+    rel[x] = rel[x] ^ rel[fa[x]]; // 路径压缩，fa[x]更新为x的根节点，同时更新rel[x]
     return fa[x] = rx;
 }
-bool merge(int x, int y, int r)
+bool merge(int x, int y, int r) // 合并x和y，它们的关系为r
 {
     int rx = findr(x), ry = findr(y);
     if (rx == ry)
@@ -3269,17 +3173,14 @@ bool merge(int x, int y, int r)
     fa[rx] = ry;
     return true;
 }
-
 int main()
 {
-    int n, m;
-    readi(n, m);            // 节点数，边数
+    int n, m; readi(n, m); // 节点数，边数
     rep(i, 1, n) fa[i] = i; // 并查集的初始化
     while (m--)
     {
-        int u, v;
-        readi(u, v);         // (u, v)无向边
-        if (!merge(u, v, 1)) // 合并时出现矛盾
+        int u, v; readi(u, v); // (u, v)无向边
+        if (!merge(u, v, 1)) // 如果合并时出现矛盾
         {
             puts("-1"); // 不是二分图
             return 0;
@@ -3299,14 +3200,9 @@ int main()
 
 #### Dijkstra
 
-```c++
-/**
-* Number:luogu4779
-* Title:【模板】单源最短路径（标准版）
-* Status:AC
-* Tag:[dijkstra]
-**/
+【题目】LUOGU4779
 
+```c++
 const int MAXN = 1e5 + 10;
 const int MAXM = 2e5 + 10;
 struct Edge
@@ -3354,28 +3250,27 @@ void dijkstra(int src) // 求src到所有点的最短路，答案保存在dis[]
         }
     }
 }
-
 int main()
 {
-    int n, m, s; // 点数，边数，起点
-    readi(n, m, s);
+    int n, m, s; readi(n, m, s); // 点数，边数，起点
     edgeid = 0, fill_n(head, n + 1, -1); // 链式前向星的初始化
     rep(i, 1, m)
     {
-        int u, v, w;
-        readi(u, v, w);
+        int u, v, w; readi(u, v, w);
         addedge(u, v, w);
     }
-    dijkstra(s);
+    dijkstra(s); // 求s到所有点的最短路
     rep(i, 1, n) printf("%lld ", dis[i]);
     return 0;
 }
 ```
 
-#### SPFA BFS版
+
+
+#### SPFA
 
 ```c++
-// luogu4779 SPFA解法
+// LUOGU4779 SPFA解法
 ll dis[MAXN];
 bool vis[MAXN];
 void spfa(int src)
@@ -3391,8 +3286,7 @@ void spfa(int src)
         for (int i = head[u]; ~i; i = edges[i].nxt)
         {
             Edge &e = edges[i];
-            if (dis[u] + e.dis >= dis[e.to])
-                continue;
+            if (dis[u] + e.dis >= dis[e.to]) continue;
             dis[e.to] = dis[u] + e.dis;
             if (!vis[e.to])
             {
@@ -3404,7 +3298,9 @@ void spfa(int src)
 }
 ```
 
-####  SPFA DFS版判负环
+
+
+####  SPFA DFS判负环
 
 ```c++
 int n, dis[510];
@@ -3460,14 +3356,9 @@ void floyd(int n) // 求任意两点的最短路，n为点的个数
 
 #### Kruskal
 
-```c++
-/**
-* Number:p3366
-* Title:【模板】最小生成树
-* Status:AC
-* Tag:[mst, 最小生成树, kruskal]
-**/
+【题号】LUOGU3366
 
+```c++
 const int MAXN = 5e3 + 10;
 const int MAXM = 2e5 + 10;
 struct Edge
@@ -3487,8 +3378,7 @@ int findr(int x)
 bool merge(int x, int y)
 {
     int rx = findr(x), ry = findr(y);
-    if (rx == ry)
-        return false;
+    if (rx == ry) return false;
     fa[rx] = ry;
     return true;
 }
@@ -3505,7 +3395,6 @@ int kruskal(int n, int m) // 有解返回MST的权值，无解返回-1
     }
     return cnt == n ? ans : -1;
 }
-
 int main()
 {
     int n, m; readi(n, m); // 点数，边数
@@ -3518,10 +3407,12 @@ int main()
 }
 ```
 
+
+
 #### Prim
 
 ```c++
-// luogu3366 Prim解法
+// LUOGU3366 Prim解法
 struct Edge
 {
     int from, to, w, nxt;
@@ -3592,7 +3483,7 @@ int main()
 
 
 
-### 单连通分量 2-SAT Tarjan
+### 单连通分量 2-SAT Tarjan（待整理）
 
 ```c++
 /**
@@ -3692,18 +3583,13 @@ int main()
 
 ### 最大匹配/最小点覆盖 Hungary
 
-```c++
-/**
-* Number:uva11419
-* Title:SAM I AM
-* Status:AC
-* Tag:[二分图, hungary, 匈牙利算法, 最小点覆盖]
-* desc: 一次可以消灭一行或一列网格中的敌人，最少几次可以消灭所有敌人
-**/
+【题号】UVA11419
 
+【题目】一次可以消灭一行或一列网格中的敌人，最少几次可以消灭所有敌人
+
+```c++
 const int MAXN = 2e3 + 10;
 const int MAXM = 2e6 + 10;
-
 struct Edge
 {
     int from, to, nxt;
@@ -3717,14 +3603,13 @@ void addedge(int from, int to)
 
 int lef[MAXN];  // 右支节点对应左支的匹配点，0表示未匹配
 bool vis[MAXN]; // 是否是匈牙利树上的节点
-bool dfs(int u) // 増广 u-匈牙利树的根节点
+bool augment(int u) // 増广 u-匈牙利树的根节点
 {
     vis[u] = true;
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
-        if (vis[v])
-            continue;
+        if (vis[v]) continue;
         vis[v] = true;
         if (!lef[v] || dfs(lef[v]))
         {
@@ -3734,45 +3619,37 @@ bool dfs(int u) // 増广 u-匈牙利树的根节点
     }
     return false;
 }
-// 最大匹配数
-int maxmatch(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
+int maxmatch(int nx, int ny) // 计算最大匹配数 nx-左支节点数量 ny-右支节点数量
 {
     int ans = 0;
     fill_n(lef, nx + ny + 1, 0);
     for (int i = 1; i <= nx; i++)
     {
         fill_n(vis, nx + ny + 1, false);
-        ans += dfs(i);
+        ans += augment(i);
     }
     return ans;
 }
-// 输出最小点覆盖所选节点的编号
-void mincover(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
+void mincover(int nx, int ny) // 输出匹配方案 nx-左支节点数量 ny-右支节点数量
 {
     fill_n(vis, nx + ny + 1, false);
     for (int i = 1; i <= nx; i++)
-        if (!lef[i])
-            dfs(i);
+        if (!lef[i]) augment(i);
     for (int i = 1; i <= nx; i++)
-        if (!vis[i])
-            printf(" r%d", i); // 左支
+        if (!vis[i]) printf(" r%d", i); // 左支
     for (int i = 1; i <= ny; i++)
-        if (vis[nx + i])
-            printf(" c%d", i); // 右支
+        if (vis[nx + i]) printf(" c%d", i); // 右支
 }
-
 int main()
 {
     int r, c, n;
     while (readi(r, c, n) != EOF && (r | c | n)) // 行数、列数、敌人数
     {
-        clr(head, -1);
-        edgeid = 0;
+        clr(head, -1), edgeid = 0;
         repne(i, 0, n)
         {
-            int x, y;
-            readi(x, y);
-            addedge(x, r + y); // 离散建图 边表示点，行号连列号
+            int x, y; readi(x, y);
+            addedge(x, r + y); // 离散建图 左侧节点表示一行，右侧表示一列，连边表示矩阵中的点
         }
         printf("%d", maxmatch(r, c)); // 最少次数
         mincover(r, c);               // 选择的行列
@@ -3785,19 +3662,8 @@ int main()
 ### Hopcroft Karp
 
 ```c++
-/**
- * 
- * 二分图匹配 Hopcroft-Karp
- * 
-**/
-
-#include <algorithm>
-#include <queue>
-
-#define INF 0x3f3f3f3f
 const int MAXN = 100010;
 const int MAXM = 300010;
-
 struct Edge
 {
     int from, to, nxt;
@@ -3883,17 +3749,15 @@ int hopcroft_karp() // 返回最大匹配数
 }
 ```
 
+
+
 ### 最佳完美匹配 KM
 
-```c++
-/**
-* Number:hdu6346
-* Title:整数规划
-* Status:AC
-* Tag:[KM, 二分图, 最大完备匹配]
-* desc: n阶方阵a[i][j]，求max(sum(x[i])+sum(y[i])) s.t. x[i]+y[j]<=a[i][j]
-**/
+【题号】HDU6346
 
+【题目】n阶方阵a[i][j]，求max(sum(x[i])+sum(y[i])) s.t. x[i]+y[j]<=a[i][j]
+
+```c++
 const int MAXN = 210;
 int n;                 // 邻接矩阵大小
 ll adj[MAXN][MAXN];    // 邻接矩阵
@@ -3915,8 +3779,7 @@ void augment(int src) // BFS増广
         ll delta = INF;
         for (int v = 1; v <= n; v++)
         {
-            if (visy[v])
-                continue;
+            if (visy[v]) continue;
             if (lx[u] + ly[v] - adj[u][v] < slack[v])
                 slack[v] = lx[u] + ly[v] - adj[u][v], pre[v] = y;
             if (slack[v] < delta)
@@ -3969,18 +3832,13 @@ int main()
 
 #### Dinic
 
-```c++
-/**
-* Number:luogu3376
-* Title:网络最大流
-* Status:AC
-* Tag:[网络流最大流]
-* desc: 网络流最大流模板题
-**/
+【题号】LUOGU3376
 
+【题目】网络流最大流模板题，求源点到汇点的最大流
+
+```c++
 const int MAXN = 10010;
 const int MAXM = 200010;
-
 struct Edge
 {
     int from, to, flow, nxt; // 起点，终点，容量
@@ -4042,8 +3900,7 @@ int dinic(int n, int src, int dst)
 
 int main()
 {
-    int n, m, s, t;
-    readi(n, m, s, t); // 点数，边数，源点，汇点
+    int n, m, s, t; readi(n, m, s, t); // 点数，边数，源点，汇点
     clr(head, -1);
     while (m--)
     {
@@ -4056,9 +3913,12 @@ int main()
 }
 ```
 
+
+
 #### ISAP
 
 ```c++
+// LUOGU3376 ISAP解法，main函数同Dinic解法，见上
 int dep[MAXN], cur[MAXN], num[MAXN], pre[MAXN];
 void bfs(int n, int dst)
 {
@@ -4140,22 +4000,15 @@ ll isap(int n, int src, int dst)
 
 
 
-
-
 ### 最小费用最大流
 
-```c++
-/**
-* Number:luogu3381
-* Title:最小费用最大流
-* Status:AC
-* Tag:[最小费用最大流]
-* desc: 最小费用最大流模板题
-**/
+【题号】LUOGU3381
 
+【题目】最小费用最大流模板题，求源点到汇点的最小费用最大流
+
+```c++
 const int MAXN = 5010;
 const int MAXM = 100010;
-
 struct Edge
 {
     int from, to, flow, dis, nxt;
@@ -4215,13 +4068,11 @@ void mcmf(int n, int src, int dst)
 
 int main()
 {
-    int n, m, s, t;
-    readi(n, m, s, t); // 点数，边数，源点，汇点
+    int n, m, s, t; readi(n, m, s, t); // 点数，边数，源点，汇点
     clr(head, -1);
     while (m--)
     {
-        int u, v, w, f;
-        readi(u, v, w, f); // 起点，终点，容量，费用
+        int u, v, w, f; readi(u, v, w, f); // 起点，终点，容量，费用
         addedge(u, v, w, f); addedge(v, u, 0, -f); // 双向边
     }
     mcmf(n, s, t);
@@ -4403,19 +4254,16 @@ struct manacher
 };
 ```
 
+
+
 ### 后缀自动机 SAM
 
+【题号】SPOJ1812
+
+【题目】求多个字符串的最长公共子串长度
+
 ```c++
-/**
-* Number:spoj1812
-* Title:Longest Common Substring II
-* Status:AC
-* Tag:[后缀自动机, sam]
-* desc: 求多个字符串的最长公共子串长度
-**/
-
 const int MAXN = 1e5 + 10;
-
 struct Node
 {
     int link, len, nxt[26]; // 后缀链接，当前节点可以表示的最长子串长度
@@ -4430,8 +4278,7 @@ void extend(int ch)
         sam[pre].nxt[ch] = cur;
         pre = sam[pre].link;
     }
-    if (!pre)
-        sam[cur].link = 1;
+    if (!pre) sam[cur].link = 1;
     else
     {
         int ori = sam[pre].nxt[ch];
@@ -4505,17 +4352,15 @@ int main()
 }
 ```
 
+
+
 ### 回文自动机 PAM
 
-```c++
-/**
-* Number:p5496
-* Title:【模板】回文自动机（PAM）
-* Status:AC
-* Tag:[pam, 回文自动机, 回文树]
-* desc: 求一字符串每个位置结尾的回文串个数
-**/
+【题号】LUOGU5496
 
+【题目】求一字符串每个位置结尾的回文串个数
+
+```c++
 const int MAXN = 5e5 + 10;
 struct Node
 {
@@ -4625,7 +4470,9 @@ struct gauss_elimination
 };
 ```
 
-## 计算几何
+
+
+## 计算几何（未完整测试，不保证正确性）
 
 ### 通用
 
