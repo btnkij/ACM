@@ -3483,98 +3483,241 @@ int main()
 
 
 
-### 单连通分量 2-SAT Tarjan（待整理）
+### 缩点
+
+【题号】LUOGU3387
+
+【题目】求有向图上一条点权和最大的链
+
+【思路】在一个强连通分量中，任意两点可相互到达，采取贪心策略一定会经过分量中的所有点。用Tarjan计算强连通分量，缩点后建立新的图，这个图一定是DAG，在上面DP即可。
 
 ```c++
-/**
-* Number:loj10097
-* Title:「一本通 3.5 练习 5」和平委员会
-* Status:AC
-* Tag:[2-sat, tarjan]
-* desc: n个党派，2n个代表，2i-1和2i属于一个党派，m对代表不能共存，输出每个党派选一名代表的方案
-**/
-
-#include <cstdio>
-#include <iostream>
-#include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <vector>
-#include <queue>
-#include <stack>
-using namespace std;
-
-const int MAXN = 8010 * 4;
-const int MAXM = 2e6 + 10;
+const int MAXN = 1e4 + 10;
+const int MAXM = 1e5 + 10;
 struct Edge
 {
     int from, to, nxt;
-} edges[MAXM];
-int head[MAXN], edgeid;
-void addedge(int from, int to)
+};
+struct Graph
 {
-    edges[edgeid] = (Edge){from, to, head[from]};
-    head[from] = edgeid++;
-}
-void addedge2(int u, int v)
-{
-    addedge(u, v);
-    addedge(v, u);
-}
+    Edge edges[MAXM];
+    int head[MAXN], edgeid;
+    Graph() // 链式前向星的初始化
+    {
+        clr(head, -1), edgeid = 0;
+    }
+    void addedge(int from, int to)
+    {
+        edges[edgeid] = {from, to, head[from]};
+        head[from] = edgeid++;
+    }
+} G, G1; // G-原图 G1-缩点后的DAG
 
-int dfn[MAXN], low[MAXN], dfsid; // dfs序，dfs树上可以连接的最小节点
-int grp[MAXN], grpid;            // 节点的分组号，是逆拓扑序
-stack<int> trace;                // 当前dfs路径
+int w[MAXN], w1[MAXN]; // w[]-原图的点权 w1[]-缩点后的点权
+int dfn[MAXN], low[MAXN], dfsid; // dfn[]-DFS序 low[]-可以连接的最小祖先
+int grp[MAXN], grpid; // grp[]-缩点后每个节点的连通分量编号
+vector<int> trace; // 维护tarjan递归的链
 void tarjan(int u)
 {
     dfn[u] = low[u] = ++dfsid;
-    trace.push(u);
+    trace.push_back(u);
+    for (int i = G.head[u]; ~i; i = G.edges[i].nxt)
+    {
+        int v = G.edges[i].to;
+        if (!dfn[v]) tarjan(v); // 如果节点v没有访问，先计算它的low[v]
+        if (!grp[v]) // 如果v没有分组，即在当前的链中
+            low[u] = min(low[u], low[v]); // 更新最小祖先
+    }
+    if (dfn[u] == low[u]) // 如果u最小连接到自身，即是连通分量的根
+    {
+        grp[u] = ++grpid; // trace末尾直到u都属于一个连通分量
+        w1[grpid] = w[u];
+        while (trace.back() != u)
+        {
+            grp[trace.back()] = grpid;
+            w1[grpid] += w[trace.back()]; // 更新缩点后的权值
+            trace.pop_back();
+        }
+        trace.pop_back();
+    }
+}
+
+int dp[MAXN];
+int dfs(int u) // DAG上的DP
+{
+    if (~dp[u]) return dp[u];
+    int tmp = 0;
+    for (int i = G1.head[u]; ~i; i = G1.edges[i].nxt)
+    {
+        int v = G1.edges[i].to;
+        tmp = max(tmp, dfs(v));
+    }
+    return dp[u] = w1[u] + tmp;
+}
+
+struct pair_hash // 自定义Hash函数
+{
+    size_t operator()(const pair<int, int> &x) const
+    {
+        return x.first * MAXN + x.second;
+    }
+};
+int main()
+{
+    int n, m; readi(n, m); // n-节点数 m-边数
+    rep(i, 1, n) readi(w[i]); // 节点的权值
+    rep(i, 1, m)
+    {
+        int u, v; readi(u, v);
+        G.addedge(u, v); // 原图的边
+    }
+    rep(i, 1, n) if (!dfn[i]) tarjan(i); // 计算强联通分量
+    unordered_set<pair<int, int>, pair_hash> vis; // 防止G1中连重边
+    repne(i, 0, G.edgeid)
+    {
+        int u = grp[G.edges[i].from], v = grp[G.edges[i].to];
+        if (u != v && !vis.count({u, v}))
+        {
+            vis.insert({u, v});
+            G1.addedge(u, v); // 建立缩点后的图
+        }
+    }
+    int ans = 0;
+    clr(dp, -1);
+    rep(i, 1, grpid) ans = max(ans, dfs(i));
+    printf("%d\n", ans);
+    return 0;
+}
+```
+
+
+
+### 割点(???)
+
+【题号】LUOGU3388
+
+【题目】求无向图的所有割点
+
+```c++
+const int MAXN = 2e4 + 10;
+const int MAXM = 1e5 + 10;
+struct Edge
+{
+    int from, to, nxt;
+} edges[MAXM * 2];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = {from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+bool cut[MAXN];
+int dfn[MAXN], low[MAXN], dfsid;
+void tarjan(int u, int pre)
+{
+    dfn[u] = low[u] = ++dfsid;
+    int son = 0;
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
         if (!dfn[v])
-            tarjan(v); // 如果v没有计算过，先tarjan点v
-        if (!grp[v])
-            low[u] = min(low[u], low[v]);
-    }
-    if (dfn[u] == low[u]) // u是强联通分量的根节点
-    {
-        grp[u] = ++grpid;
-        while (trace.top() != u)
         {
-            grp[trace.top()] = grpid;
-            trace.pop();
+            son++;
+            tarjan(v, u);
+            low[u] = min(low[u], low[v]);
+            if (low[v] >= dfn[u]) cut[u] = true;
         }
-        trace.pop();
+        else low[u] = min(low[u], dfn[v]);
+    }
+    if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
+        cut[u] = false;      //则根节点不是割点
+}
+
+int main()
+{
+    int n, m; readi(n, m);
+    clr(head, -1), edgeid = 0;
+    while (m--)
+    {
+        int u, v; readi(u, v);
+        addedge(u, v), addedge(v, u);
+    }
+    rep(i, 1, n) if (!dfn[i]) tarjan(i, 0);
+    printf("%d\n", count(cut + 1, cut + n + 1, true)); // 割点数量
+    rep(i, 1, n) if (cut[i]) printf("%d ", i); // 输出所有割点
+    return 0;
+}
+```
+
+
+
+### 2-SAT
+
+【题号】LIBREOJ10097
+
+【题目】$n$个党派，第$i \in [1,n]$个党派有$2i-1$、$2i$两名代表，所有代表中，有$m$对存在矛盾，不能同时选择，求一种每个党派选出一名代表的方案。
+
+```c++
+const int MAXN = 8010;
+const int MAXM = 20010;
+struct Edge
+{
+    int from, to, nxt;
+} edges[MAXM * 4];
+int head[MAXN * 2], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = {from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+int dfn[MAXN * 2], low[MAXN * 2], dfsid;
+int grp[MAXN * 2], grpid;
+vector<int> trace;
+void tarjan(int u) // Tarjan强连通分量模板
+{
+    dfn[u] = low[u] = ++dfsid;
+    trace.push_back(u);
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        if (!dfn[v]) tarjan(v);
+        if (!grp[v]) low[u] = min(low[u], low[v]);
+    }
+    if (dfn[u] == low[u])
+    {
+        for (grp[u] = ++grpid; trace.back() != u; trace.pop_back())
+            grp[trace.back()] = grpid;
+        trace.pop_back();
     }
 }
 
 int main()
 {
-    int n, m; readi(n, m); // 点数，边数
-    clr(head, -1);
+    int n, m; readi(n, m); // n-节点数 m-边数
+    clr(head, -1), edgeid = 0; // 链式前向星的初始化
     repne(i, 0, m)
     {
-        int u, v;
-        readi(u, v); // u与v有矛盾
-        u--, v--;
-        // u-选u u^1-选u的对立面
-        // u->v表示如果选u则一定要选v
-        addedge(u, v ^ 1);
-        addedge(v, u ^ 1);
+        int u, v; readi(u, v); // u和v不能同时选
+        u--, v--;          // 从0开始计数，与u同属一个党派的是u^1
+        addedge(u, v ^ 1); // 选了u就必须选v^1
+        addedge(v, u ^ 1); // 选了v就必须选u^1
+        // 不能推出 u^1->v, v^1->u 这些关系
     }
-    rep(i, 1, n << 1) if (!dfn[i]) tarjan(i);
-    rep(i, 1, n << 1)
+    repne(i, 0, n << 1) if (!dfn[i]) tarjan(i);
+    for (int i = 0; i < (n << 1); i += 2)
     {
-        if (grp[i] == grp[i ^ 1]) // 矛盾
+        if (grp[i] == grp[i ^ 1]) // 出现矛盾，i与i^1在同一连通分量中
         {
-            printf("NIE");
+            puts("NIE"); // 无解
             return 0;
         }
     }
-    rep(i, 1, n << 1) if (grp[i] < grp[i ^ 1])
-        // (i^1)->(i)，选了(i^1)就必须选(i)，那么只能选i
-        printf("%d\n", i);
+    for (int i = 0; i < (n << 1); i++)
+        if (grp[i] < grp[i ^ 1])   // 可能存在i^1->i的路径，表示如果选了i^1，那么i也必须选
+            printf("%d\n", i + 1); // 所以只能选i，输出时记得+1
+    }
     return 0;
 }
 ```
@@ -5039,6 +5182,45 @@ Circle InscribedCircle(const Point& p1, const Point& p2, const Point& p3)
 
 
 ## C++ STL
+
+### unordered_set / unordered_map
+
+自定义Hash函数的方法
+
+```c++
+#include <unordered_set>
+struct pair_hash // 自定义Hash函数
+{
+    size_t operator()(const pair<int, int> &x) const // 返回值类型要求为size_t
+    {
+        return x.first * 131 + x.second;
+    }
+};
+std::unordered_set<pair<int, int>, pair_hash> custom_set;
+```
+
+防止默认Hash函数被卡的方法
+
+```c++
+#include <unordered_map>
+#include <chrono>
+struct custom_hash {
+    static uint64_t splitmix64(uint64_t x) {
+        x += 0x9e3779b97f4a7c15;
+        x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+        x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+        return x ^ (x >> 31);
+    }
+    size_t operator()(uint64_t x) const {
+        static const uint64_t FIXED_RANDOM = 
+            chrono::steady_clock::now().time_since_epoch().count();
+        return splitmix64(x + FIXED_RANDOM);
+    }
+};
+std::unordered_map<long long, int, custom_hash> safe_map;
+```
+
+
 
 ### regex
 
