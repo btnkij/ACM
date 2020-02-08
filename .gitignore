@@ -1,5 +1,5 @@
 .vscode
-[current_contest]
+\[current_contest\]
 *.exe
 *.txt
 test.*
