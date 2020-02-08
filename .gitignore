@@ -2,3 +2,6 @@
 *.exe
 *.txt
 test.*
+maker.cpp
+compare.py
+[current_contest]
