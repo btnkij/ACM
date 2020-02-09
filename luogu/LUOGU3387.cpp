@@ -65,15 +65,23 @@ void tarjan(int u)
     {
         int v = G.edges[i].to;
         if (!dfn[v])
+        {
             tarjan(v); // 如果节点v没有访问，先计算它的low[v]
-        if (!grp[v]) // 如果v没有分组，即在当前的链中
-            low[u] = min(low[u], low[v]); // 更新最小祖先
+            low[u] = min(low[u], low[v]);
+        }
+        else if (!grp[v]) // 如果v没有分组，即在当前的DFS链中
+            low[u] = min(low[u], dfn[v]); // 更新最小祖先
     }
     if (dfn[u] == low[u]) // 如果u最小连接到自身，即是连通分量的根
     {
-        // trace末尾直到u都属于一个连通分量
-        for (grp[u] = ++grpid; trace.back() != u; trace.pop_back())
+        grp[u] = ++grpid; // trace末尾直到u都属于一个连通分量
+        w1[grpid] = w[u];
+        while (trace.back() != u)
+        {
             grp[trace.back()] = grpid;
+            w1[grpid] += w[trace.back()]; // 更新缩点后的权值
+            trace.pop_back();
+        }
         trace.pop_back();
     }
 }

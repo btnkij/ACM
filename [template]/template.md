@@ -3628,7 +3628,7 @@ void tarjan(int u, int pre) // pre-父节点经过哪条边到达u
     trace.push_back(u);
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        if ((i ^ 1) == pre) continue; // 不经过反向边，保证求出来的双连通
+        if ((i ^ 1) == pre) continue; // 不经过反向边，保证求出来的双连通，注意运算符优先级
         int v = edges[i].to;
         if (!dfn[v])
         {
@@ -3670,25 +3670,8 @@ int main()
 
 #### 割点
 
-【题号】LUOGU3388
-
-【题目】求无向图的所有割点
-
 ```c++
-const int MAXN = 2e4 + 10;
-const int MAXM = 1e5 + 10;
-struct Edge
-{
-    int from, to, nxt;
-} edges[MAXM * 2];
-int head[MAXN], edgeid;
-void addedge(int from, int to)
-{
-    edges[edgeid] = {from, to, head[from]};
-    head[from] = edgeid++;
-}
-
-bool cut[MAXN]; // 是否是割点
+bool cut[MAXN]; // cut[i]=true表示i是割点
 int dfn[MAXN], low[MAXN], dfsid;
 void tarjan(int u, int pre) // pre-父节点
 {
@@ -3711,20 +3694,31 @@ void tarjan(int u, int pre) // pre-父节点
     if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
         cut[u] = false;      // 则根节点不是割点
 }
+```
 
-int main()
+
+
+#### 割边
+
+```c++
+bool cut[MAXM * 2]; // cut[i]=true表示边i是割边
+int dfn[MAXN], low[MAXN], dfsid;
+void tarjan(int u, int pre)
 {
-    int n, m; readi(n, m); // n-节点数 m-边数
-    clr(head, -1), edgeid = 0; // 链式前向星的初始化
-    while (m--)
+    dfn[u] = low[u] = ++dfsid;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        int u, v; readi(u, v);
-        addedge(u, v), addedge(v, u);
+        if ((i ^ 1) == pre) continue; // 不直接走反向边，注意运算符优先级
+        int v = edges[i].to;
+        if (!dfn[v])
+        {
+            tarjan(v, i);
+            low[u] = min(low[u], low[v]);
+            // 如果v不能绕到u或u的上方，那么i是割边
+            if (low[v] > dfn[u]) cut[i] = cut[i ^ 1] = true;
+        }
+        else low[u] = min(low[u], dfn[v]);
     }
-    rep(i, 1, n) if (!dfn[i]) tarjan(i, 0);
-    printf("%d\n", count(cut + 1, cut + n + 1, true)); // 输出割点数量
-    rep(i, 1, n) if (cut[i]) printf("%d ", i); // 输出所有割点
-    return 0;
 }
 ```
 

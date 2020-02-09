@@ -1,8 +1,8 @@
 /**
-* Number:luogu3388
-* Title:【模板】割点（割顶）
+* Number:loj10102
+* Title:「一本通 3.6 练习 3」旅游航道
 * Status:AC
-* Tag:[tarjan, 割点]
+* Tag:[tarjan, 割边, 桥]
 **/
 
 #include <cstdio>
@@ -31,8 +31,8 @@ inline int reads(char *s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN = 2e4 + 10;
-const int MAXM = 1e5 + 10;
+const int MAXN = 30010;
+const int MAXM = 30010;
 struct Edge
 {
     int from, to, nxt;
@@ -44,29 +44,26 @@ void addedge(int from, int to)
     head[from] = edgeid++;
 }
 
-bool cut[MAXN];
+bool cut[MAXM * 2]; // cut[i]=true表示边i是割边
 int dfn[MAXN], low[MAXN], dfsid;
 void tarjan(int u, int pre)
 {
     dfn[u] = low[u] = ++dfsid;
-    int son = 0;
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
+        if ((i ^ 1) == pre)
+            continue; // 不直接走反向边
         int v = edges[i].to;
-        if (v == pre)
-            continue;
         if (!dfn[v])
         {
-            son++;
-            tarjan(v, u);
+            tarjan(v, i);
             low[u] = min(low[u], low[v]);
-            if (low[v] >= dfn[u])
-                cut[u] = true;
+            if (low[v] > dfn[u])            // 如果v不能绕到u或u的上方
+                cut[i] = cut[i ^ 1] = true; // i是割边
         }
-        else low[u] = min(low[u], dfn[v]);
+        else
+            low[u] = min(low[u], dfn[v]);
     }
-    if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
-        cut[u] = false;      // 则根节点不是割点
 }
 
 int main()
@@ -76,16 +73,18 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     int n, m;
-    readi(n, m);
-    clr(head, -1), edgeid = 0;
-    while (m--)
+    while (readi(n, m) != EOF && n && m)
     {
-        int u, v;
-        readi(u, v);
-        addedge(u, v), addedge(v, u);
+        fill_n(head, n + 1, -1), edgeid = 0;
+        while (m--)
+        {
+            int u, v;
+            readi(u, v);
+            addedge(u, v), addedge(v, u);
+        }
+        fill_n(cut, edgeid, false), fill_n(dfn, n + 1, 0), dfsid = 0;
+        rep(i, 1, n) if (!dfn[i]) tarjan(i, -1);
+        printf("%d\n", count(cut, cut + edgeid, true) / 2);
     }
-    rep(i, 1, n) if (!dfn[i]) tarjan(i, 0);
-    printf("%d\n", count(cut + 1, cut + n + 1, true));
-    rep(i, 1, n) if (cut[i]) printf("%d ", i);
     return 0;
 }

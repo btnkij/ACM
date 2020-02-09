@@ -1,6 +1,6 @@
 /**
-* Number:luogu3388
-* Title:【模板】割点（割顶）
+* Number:loj10101
+* Title:「一本通 3.6 练习 2」嗅探器
 * Status:AC
 * Tag:[tarjan, 割点]
 **/
@@ -31,8 +31,8 @@ inline int reads(char *s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN = 2e4 + 10;
-const int MAXM = 1e5 + 10;
+const int MAXN = 110;
+const int MAXM = MAXN * MAXN;
 struct Edge
 {
     int from, to, nxt;
@@ -44,12 +44,11 @@ void addedge(int from, int to)
     head[from] = edgeid++;
 }
 
-bool cut[MAXN];
+int S, T, ans;
 int dfn[MAXN], low[MAXN], dfsid;
 void tarjan(int u, int pre)
 {
     dfn[u] = low[u] = ++dfsid;
-    int son = 0;
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
@@ -57,16 +56,19 @@ void tarjan(int u, int pre)
             continue;
         if (!dfn[v])
         {
-            son++;
             tarjan(v, u);
             low[u] = min(low[u], low[v]);
-            if (low[v] >= dfn[u])
-                cut[u] = true;
+            if (low[v] >= dfn[u]) // u是割点
+            {
+                if (u != S && u != T && low[T] >= dfn[u]) // u是S到T的割点
+                {
+                    ans = min(ans, u);
+                }
+            }
         }
-        else low[u] = min(low[u], dfn[v]);
+        else
+            low[u] = min(low[u], dfn[v]);
     }
-    if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
-        cut[u] = false;      // 则根节点不是割点
 }
 
 int main()
@@ -75,17 +77,18 @@ int main()
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n, m;
-    readi(n, m);
+    int n;
+    readi(n);
+    int u, v;
     clr(head, -1), edgeid = 0;
-    while (m--)
-    {
-        int u, v;
-        readi(u, v);
+    while (readi(u, v), u && v)
         addedge(u, v), addedge(v, u);
-    }
-    rep(i, 1, n) if (!dfn[i]) tarjan(i, 0);
-    printf("%d\n", count(cut + 1, cut + n + 1, true));
-    rep(i, 1, n) if (cut[i]) printf("%d ", i);
+    readi(S, T);
+    ans = INF;
+    tarjan(S, 0);
+    if (ans == INF)
+        puts("No solution");
+    else
+        printf("%d\n", ans);
     return 0;
 }

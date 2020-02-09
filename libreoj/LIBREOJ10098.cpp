@@ -57,8 +57,11 @@ void tarjan(int u, int pre)
             continue; // 不经过反向边，保证求出来的双连通
         int v = edges[i].to;
         if (!dfn[v])
+        {
             tarjan(v, i);
-        low[u] = min(low[u], low[v]); // 无向图DFS，u、v一定在当前链上，不需要if(!grp[v])
+            low[u] = min(low[u], low[v]);
+        }
+        else low[u] = min(low[u], dfn[v]); // 无向图中DFS，u、v一定在一条链上，不需要if(!grp[v])
     }
     if (dfn[u] == low[u])
     {
@@ -90,6 +93,6 @@ int main()
             deg[grp[e.to]]++;
     });
     int k = count(deg.begin() + 1, deg.end(), 1); // 度为1的双连通分量个数
-    printf("%d\n", (k + 1) / 2); // 度为1的分量两两连边，如果单一个，它与任意节点连边
+    printf("%d\n", (k + 1) / 2);                  // 度为1的分量两两连边，如果单一个，它与任意节点连边
     return 0;
 }
