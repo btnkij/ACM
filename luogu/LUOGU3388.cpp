@@ -53,21 +53,19 @@ void tarjan(int u, int pre)
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
+        if (v == pre)
+            continue;
         if (!dfn[v])
         {
             son++;
             tarjan(v, u);
-            low[u] = min(low[u], low[v]);
             if (low[v] >= dfn[u])
                 cut[u] = true;
         }
-        else
-        {
-            low[u] = min(low[u], dfn[v]);
-        }
+        low[u] = min(low[u], low[v]);
     }
     if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
-        cut[u] = false;      //则根节点不是割点
+        cut[u] = false;      // 则根节点不是割点
 }
 
 int main()

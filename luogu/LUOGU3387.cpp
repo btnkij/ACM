@@ -71,14 +71,9 @@ void tarjan(int u)
     }
     if (dfn[u] == low[u]) // 如果u最小连接到自身，即是连通分量的根
     {
-        grp[u] = ++grpid; // trace末尾直到u都属于一个连通分量
-        w1[grpid] = w[u];
-        while (trace.back() != u)
-        {
+        // trace末尾直到u都属于一个连通分量
+        for (grp[u] = ++grpid; trace.back() != u; trace.pop_back())
             grp[trace.back()] = grpid;
-            w1[grpid] += w[trace.back()];
-            trace.pop_back();
-        }
         trace.pop_back();
     }
 }

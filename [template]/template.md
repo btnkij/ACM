@@ -3483,13 +3483,15 @@ int main()
 
 
 
-### 缩点
+### Tarjan 连通分量
+
+#### 单连通分量
 
 【题号】LUOGU3387
 
 【题目】求有向图上一条点权和最大的链
 
-【思路】在一个强连通分量中，任意两点可相互到达，采取贪心策略一定会经过分量中的所有点。用Tarjan计算强连通分量，缩点后建立新的图，这个图一定是DAG，在上面DP即可。
+【思路】在一个单连通分量中，任意两点可相互到达，采取贪心策略一定会经过分量中的所有点。将有向图的单连通分量缩成一个点，权值为原来所有点权之和，得到的新图是DAG，然后在DAG上DP。
 
 ```c++
 const int MAXN = 1e4 + 10;
@@ -3515,7 +3517,7 @@ struct Graph
 
 int w[MAXN], w1[MAXN]; // w[]-原图的点权 w1[]-缩点后的点权
 int dfn[MAXN], low[MAXN], dfsid; // dfn[]-DFS序 low[]-可以连接的最小祖先
-int grp[MAXN], grpid; // grp[]-缩点后每个节点的连通分量编号
+int grp[MAXN], grpid; // grp[]-缩点后每个节点的连通分量编号，有向图缩点后得到DAG
 vector<int> trace; // 维护tarjan递归的链
 void tarjan(int u)
 {
@@ -3592,7 +3594,73 @@ int main()
 
 
 
-### 割点(???)
+#### 双连通分量
+
+【题号】LIBREOJ10098
+
+【题目】一个无向图，至少需要添加几条边，使得任意两个节点之间至少存在两条路径。
+
+```c++
+const int MAXN = 5e3 + 10;
+const int MAXM = 1e4 + 10;
+struct Edge
+{
+    int from, to, nxt;
+} edges[MAXM * 2];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = {from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+// 无向图双连通分量的Tarjan，注意与单连通分量的区别
+int dfn[MAXN], low[MAXN], dfsid;
+int grp[MAXN], grpid; // 无向图缩点后得到有重边的树
+vector<int> trace;
+void tarjan(int u, int pre) // pre-父节点经过哪条边到达u
+{
+    dfn[u] = low[u] = ++dfsid;
+    trace.push_back(u);
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        if ((i ^ 1) == pre) continue; // 不经过反向边，保证求出来的双连通
+        int v = edges[i].to;
+        if (!dfn[v]) tarjan(v, i);
+        low[u] = min(low[u], low[v]); // 无向图DFS，u、v一定在当前链上，不需要if(!grp[v])
+    }
+    if (dfn[u] == low[u])
+    {
+        for (grp[u] = ++grpid; trace.back() != u; trace.pop_back())
+            grp[trace.back()] = grpid;
+        trace.pop_back();
+    }
+}
+
+int main()
+{
+    int n, m; readi(n, m); // n-节点数 m-边数
+    clr(head, -1), edgeid = 0; // 链式前向星的初始化
+    while (m--)
+    {
+        int u, v; readi(u, v);
+        addedge(u, v), addedge(v, u);
+    }
+    rep(i, 1, n) if (!dfn[i]) tarjan(i, -1); // Tarjan求双连通分量
+    vector<int> deg(grpid + 1, 0); // 记录每个双连通分量的度
+    for_each(edges, edges + edgeid, [&](const Edge &e) {
+        if (grp[e.from] != grp[e.to])
+            deg[grp[e.to]]++;
+    });
+    int k = count(deg.begin() + 1, deg.end(), 1); // 度为1的双连通分量个数
+    printf("%d\n", (k + 1) / 2); // 度为1的分量两两连边，如果单一个，它与任意节点连边
+    return 0;
+}
+```
+
+
+
+#### 割点
 
 【题号】LUOGU3388
 
@@ -3612,7 +3680,7 @@ void addedge(int from, int to)
     head[from] = edgeid++;
 }
 
-bool cut[MAXN];
+bool cut[MAXN]; // 是否是割点
 int dfn[MAXN], low[MAXN], dfsid;
 void tarjan(int u, int pre)
 {
@@ -3621,30 +3689,31 @@ void tarjan(int u, int pre)
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
+        if (v == pre) continue; // 不能直接走反向边
         if (!dfn[v])
         {
-            son++;
+            son++; // 统计u有多少个互不连通的儿子
             tarjan(v, u);
-            low[u] = min(low[u], low[v]);
+            // 如果v不能通过其他路径绕到u上方，那么u是割点
             if (low[v] >= dfn[u]) cut[u] = true;
         }
-        else low[u] = min(low[u], dfn[v]);
+        low[u] = min(low[u], low[v]); // 无向图中DFS，u、v一定在一条链上，不需要if(!grp[v])
     }
     if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
-        cut[u] = false;      //则根节点不是割点
+        cut[u] = false;      // 则根节点不是割点
 }
 
 int main()
 {
-    int n, m; readi(n, m);
-    clr(head, -1), edgeid = 0;
+    int n, m; readi(n, m); // n-节点数 m-边数
+    clr(head, -1), edgeid = 0; // 链式前向星的初始化
     while (m--)
     {
         int u, v; readi(u, v);
         addedge(u, v), addedge(v, u);
     }
     rep(i, 1, n) if (!dfn[i]) tarjan(i, 0);
-    printf("%d\n", count(cut + 1, cut + n + 1, true)); // 割点数量
+    printf("%d\n", count(cut + 1, cut + n + 1, true)); // 输出割点数量
     rep(i, 1, n) if (cut[i]) printf("%d ", i); // 输出所有割点
     return 0;
 }
@@ -3652,7 +3721,7 @@ int main()
 
 
 
-### 2-SAT
+#### 2-SAT
 
 【题号】LIBREOJ10097
 
@@ -3724,7 +3793,7 @@ int main()
 
 
 
-### 最大匹配/最小点覆盖 Hungary
+### Hungary 最大匹配/最小点覆盖
 
 【题号】UVA11419
 
