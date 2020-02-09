@@ -3526,9 +3526,13 @@ void tarjan(int u)
     for (int i = G.head[u]; ~i; i = G.edges[i].nxt)
     {
         int v = G.edges[i].to;
-        if (!dfn[v]) tarjan(v); // 如果节点v没有访问，先计算它的low[v]
-        if (!grp[v]) // 如果v没有分组，即在当前的链中
-            low[u] = min(low[u], low[v]); // 更新最小祖先
+        if (!dfn[v])
+        {
+            tarjan(v); // 如果节点v没有访问，先计算它的low[v]
+            low[u] = min(low[u], low[v]);
+        }
+        else if (!grp[v]) // 如果v访问过，且没有分组，即在当前的DFS链中
+            low[u] = min(low[u], dfn[v]); // 更新最小祖先
     }
     if (dfn[u] == low[u]) // 如果u最小连接到自身，即是连通分量的根
     {
@@ -3626,8 +3630,12 @@ void tarjan(int u, int pre) // pre-父节点经过哪条边到达u
     {
         if ((i ^ 1) == pre) continue; // 不经过反向边，保证求出来的双连通
         int v = edges[i].to;
-        if (!dfn[v]) tarjan(v, i);
-        low[u] = min(low[u], low[v]); // 无向图DFS，u、v一定在当前链上，不需要if(!grp[v])
+        if (!dfn[v])
+        {
+            tarjan(v, i);
+            low[u] = min(low[u], low[v]);
+        }
+        else low[u] = min(low[u], dfn[v]); // 无向图中DFS，u、v一定在DFS链上
     }
     if (dfn[u] == low[u])
     {
@@ -3682,7 +3690,7 @@ void addedge(int from, int to)
 
 bool cut[MAXN]; // 是否是割点
 int dfn[MAXN], low[MAXN], dfsid;
-void tarjan(int u, int pre)
+void tarjan(int u, int pre) // pre-父节点
 {
     dfn[u] = low[u] = ++dfsid;
     int son = 0;
@@ -3694,10 +3702,11 @@ void tarjan(int u, int pre)
         {
             son++; // 统计u有多少个互不连通的儿子
             tarjan(v, u);
+            low[u] = min(low[u], low[v]);
             // 如果v不能通过其他路径绕到u上方，那么u是割点
             if (low[v] >= dfn[u]) cut[u] = true;
         }
-        low[u] = min(low[u], low[v]); // 无向图中DFS，u、v一定在一条链上，不需要if(!grp[v])
+        else low[u] = min(low[u], dfn[v]); // 无向图中DFS，u、v一定在一条DFS链上
     }
     if (pre == 0 && son < 2) // 如果是根节点并且连通分量小于2
         cut[u] = false;      // 则根节点不是割点
@@ -3742,7 +3751,7 @@ void addedge(int from, int to)
 }
 
 int dfn[MAXN * 2], low[MAXN * 2], dfsid;
-int grp[MAXN * 2], grpid;
+int grp[MAXN * 2], grpid; // grp[]实际上是拓扑排序的逆序
 vector<int> trace;
 void tarjan(int u) // Tarjan强连通分量模板
 {
@@ -3752,7 +3761,7 @@ void tarjan(int u) // Tarjan强连通分量模板
     {
         int v = edges[i].to;
         if (!dfn[v]) tarjan(v);
-        if (!grp[v]) low[u] = min(low[u], low[v]);
+        if (!grp[v]) low[u] = min(low[u], low[v]); // 注意只有求有向图单连通分量时可以这样写
     }
     if (dfn[u] == low[u])
     {
