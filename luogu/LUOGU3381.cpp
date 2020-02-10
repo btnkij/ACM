@@ -44,6 +44,11 @@ void addedge(int from, int to, int flow, int dis)
     edges[edgeid] = (Edge){from, to, flow, dis, head[from]};
     head[from] = edgeid++;
 }
+void addflow(int from, int to, int flow, int dis)
+{
+    addedge(from, to, flow, dis);
+    addedge(to, from, 0, -dis);
+}
 
 int dis[MAXN], pre[MAXN]; // 最短路长度，最短路树
 bool vis[MAXN];
@@ -102,9 +107,8 @@ int main()
     clr(head, -1);
     while (m--)
     {
-        int u, v, w, f;
-        readi(u, v, w, f); // 起点，终点，容量，费用
-        addedge(u, v, w, f); addedge(v, u, 0, -f); // 双向边
+        int u, v, w, f; readi(u, v, w, f); // 起点，终点，容量，费用
+        addflow(u, v, w, f);
     }
     mcmf(n, s, t);
     printf("%d %d", maxflow, mincost);

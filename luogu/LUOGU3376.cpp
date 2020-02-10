@@ -44,8 +44,13 @@ void addedge(int from, int to, int flow)
     edges[edgeid] = (Edge){from, to, flow, head[from]};
     head[from] = edgeid++;
 }
+void addflow(int from, int to, int flow)
+{
+    addedge(from, to, flow);
+    addedge(to, from, 0);
+}
 
-/*
+
 int dep[MAXN], cur[MAXN], num[MAXN], pre[MAXN];
 void bfs(int n, int dst)
 {
@@ -66,9 +71,9 @@ void bfs(int n, int dst)
         }
     }
 }
-ll augment(int src, int dst)
+int augment(int src, int dst)
 {
-    ll f = INF;
+    int f = INF;
     for (int u = dst; u != src; u = edges[pre[u]].from)
         f = min(f, edges[pre[u]].flow);
     for (int u = dst; u != src; u = edges[pre[u]].from)
@@ -78,7 +83,7 @@ ll augment(int src, int dst)
     }
     return f;
 }
-ll isap(int n, int src, int dst)
+int isap(int n, int src, int dst)
 {
     fill_n(num, n + 1, 0);
     bfs(n, dst);
@@ -88,7 +93,7 @@ ll isap(int n, int src, int dst)
         cur[i] = head[i];
     }
     int u = src;
-    ll ans = 0;
+    int ans = 0;
     while (dep[src] < n)
     {
         if (u == dst)
@@ -123,8 +128,8 @@ ll isap(int n, int src, int dst)
     }
     return ans;
 }
-*/
 
+/*
 int dep[MAXN], cur[MAXN]; // 分层，当前弧
 bool bfs(int src, int dst)
 {
@@ -172,6 +177,7 @@ int dinic(int n, int src, int dst)
     }
     return ans;
 }
+*/
 
 int main()
 {
@@ -184,10 +190,10 @@ int main()
     clr(head, -1);
     while (m--)
     {
-        int a, b, f; readi(a, b, f);
-        addedge(a, b, f); addedge(b, a, 0); // 双向边
+        int a, b, f; readi(a, b, f); // 起点，终点，容量
+        addflow(a, b, f);
     }
-    printf("%d\n", dinic(n, s, t));
-    // printf("%d\n", isap(n, s, t));
+    // printf("%d\n", dinic(n, s, t));
+    printf("%d\n", isap(n, s, t));
     return 0;
 }
