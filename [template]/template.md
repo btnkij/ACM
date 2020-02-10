@@ -2,10 +2,6 @@
 
 ## 待整理
 
-莫队 luogu1494
-
-带修改莫队 luogu1903
-
 技巧：树的括号序列表达 luogu2056
 
 
@@ -456,6 +452,166 @@ int main()
     for (int i : dlx.ans)
         suduku[trans[i].x][trans[i].y] = trans[i].val;
     rep2(i, 1, 9, j, 1, 9) printf("%d%c", suduku[i][j], j == 9 ? '\n' : ' ');
+    return 0;
+}
+```
+
+
+
+### 莫队
+
+【题号】LUOGU1494
+
+【题目】多组询问，区间中任选两个数字，求它们相同的概率
+
+```c++
+const int MAXN = 50010;
+int sz; // 分块大小
+struct Query
+{
+    int L, R, id;
+    bool operator<(const Query &rhs) const
+    {
+        int b1 = L / sz, b2 = rhs.L / sz;
+        if (b1 != b2)
+            return b1 < b2; // 不同块内按块号排序
+        return (R < rhs.R) ^ (b1 & 1); // 偶数块内R升序，奇数块内R降序
+    }
+} querys[MAXN];
+
+// 莫队算法
+ll sum1, sum2, cnt[MAXN]; // sum1-分子，sum2-总数，cnt[]-每种颜色的数量
+ll ans1[MAXN], ans2[MAXN]; // ans1-答案的分子，ans2-答案的分母
+void add(int color)
+{
+    ll &x = cnt[color];
+    sum1 = sum1 - (x * (x - 1) / 2) + ((x + 1) * x / 2);
+    sum2 = sum2 + 1;
+    x++;
+}
+void erase(int color)
+{
+    ll &x = cnt[color];
+    sum1 = sum1 - (x * (x - 1) / 2) + ((x - 1) * (x - 2) / 2);
+    sum2 = sum2 - 1;
+    x--;
+}
+
+ll gcd(ll a, ll b) // GCD模板
+{
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+int c[MAXN]; // 序列
+int main()
+{
+    int n, m; readi(n, m); // n-序列长度 m-询问数
+    rep(i, 1, n) readi(c[i]);
+    sz = (int)sqrt(n + 1); // 最优分块复杂度为O(n^(3/2))
+    rep(i, 1, m) // 离线所有询问
+    {
+        readi(querys[i].L, querys[i].R);
+        querys[i].id = i;
+    }
+    sort(querys + 1, querys + m + 1);
+    int wndL = 1, wndR = 0; // 当前的滑动窗口[wndL, wndR]，初始化为空集
+    rep(i, 1, m)
+    {
+        Query &q = querys[i];
+        while (wndR < q.R) add(c[++wndR]);   // 先扩大窗口
+        while (wndL > q.L) add(c[--wndL]);
+        while (wndR > q.R) erase(c[wndR--]); // 再缩小窗口
+        while (wndL < q.L) erase(c[wndL++]);
+        if (sum1 == 0)
+            ans1[q.id] = 0, ans2[q.id] = 1;
+        else
+        {
+            ll sum3 = sum2 * (sum2 - 1) / 2;
+            ll d = gcd(sum1, sum3);
+            ans1[q.id] = sum1 / d, ans2[q.id] = sum3 / d;
+        }
+    }
+    rep(i, 1, m) printf("%lld/%lld\n", ans1[i], ans2[i]);
+    return 0;
+}
+```
+
+
+
+### 带修改莫队
+
+【题号】LUOGU1903
+
+【题目】动态维护区间中不同颜色的数量，可离线。
+
+```c++
+const int MAXN = 140000;
+int sz; // 分块大小
+struct Query
+{
+    int L, R, T, id;
+    bool operator<(const Query &rhs) const
+    {
+        if (L / sz != rhs.L / sz) return L < rhs.L;
+        if (R / sz != rhs.R / sz) return R < rhs.R;
+        return T < rhs.T; // 注意排序方式与普通莫队的区别
+    }
+} querys[MAXN];
+struct Update
+{
+    int pos, val;
+} updates[MAXN];
+
+int s[MAXN], ans[MAXN];
+int cnt[1000010], wnd; // cnt[i]-颜色i出现次数 wnd-当前窗口的答案
+int wndL = 1, wndR = 0, wndT = 0;
+void add(int color)
+{
+    if (++cnt[color] == 1) wnd++;
+}
+void erase(int color)
+{
+    if (--cnt[color] == 0) wnd--;
+}
+void change(Update &upd)
+{
+    if (wndL <= upd.pos && upd.pos <= wndR)
+    {
+        erase(s[upd.pos]);
+        add(upd.val);
+    }
+    swap(upd.val, s[upd.pos]);
+}
+
+int main()
+{
+    int n = readu(), m = readu();
+    rep(i, 1, n) s[i] = readu();
+    sz = (int)pow(n + 1, 2.0 / 3.0); // 复杂度O(n^(5/3))
+    int len1 = 0, len2 = 0;
+    int t = 0;
+    while (m--)
+    {
+        char op[4]; scanf("%s", op);
+        int x = readu(), y = readu(); // readu()-读入优化
+        if (op[0] == 'Q') // 查询第t次修改前[x, y]有多少种不同的颜色
+            querys[len1] = {x, y, t, len1}, len1++;
+        else if (op[0] == 'R') // 把x的颜色改为y
+            updates[len2++] = {x, y}, t++;
+    }
+    sort(querys, querys + len1);
+    repne(i, 0, len1)
+    {
+        Query &q = querys[i];
+        while (wndT < q.T) change(updates[wndT++]); // 在时间轴上移动
+        while (wndT > q.T) change(updates[--wndT]);
+        while (wndR < q.R) add(s[++wndR]);
+        while (wndL > q.L) add(s[--wndL]);
+        while (wndR > q.R) erase(s[wndR--]);
+        while (wndL < q.L) erase(s[wndL++]);
+        ans[q.id] = wnd;
+    }
+    repne(i, 0, len1) printf("%d\n", ans[i]);
     return 0;
 }
 ```
