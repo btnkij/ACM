@@ -1,155 +1,176 @@
 /**
-* Number:p2762
+* Number:luogu2762
 * Title:太空飞行计划问题
 * Status:AC
-* Tag:[网络流最大流]
+* Tag:[网络流, 最小割, 最大权闭合子图]
 **/
 
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <string>
+#include <sstream>
 using namespace std;
 
-#define INF 0x7fffffff
-#define PI acos(-1)
+#define INF 0x3f3f3f3f
 typedef long long ll;
+typedef unsigned long long ull;
 
-#define readi(i1) scanf("%d", &i1)
-#define readi2(i1, i2) scanf("%d %d", &i1, &i2)
-#define readi3(i1, i2, i3) scanf("%d %d %d", &i1, &i2, &i3)
-#define readi4(i1, i2, i3, i4) scanf("%d %d %d %d", &i1, &i2, &i3, &i4)
-#define reads(s1) scanf("%s", s1)
-#define mset(mem, val) memset(mem, val, sizeof(mem))
-#define rep(i, begin, end) for (int i = (begin); i <= (end); i++)
+inline int readi(int& i1) { return scanf("%d", &i1); }
+inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int& i1, int& i2, int& i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int& i1, int& i2, int& i3, int& i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char* s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
 #define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
-#define repne(i, begin, end) for (int i = (begin); i < (end); i++)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-const int MAXN=100+10;
-const int MAXM=MAXN*MAXN*2;
+const int MAXN=200;
+const int MAXM=2000;
 struct Edge
 {
-    int from,to,cap;
+    int from,to,flow,nxt;
 }edges[MAXM];
-int tot,head[MAXN],nxt[MAXM];
-void add1(int from,int to,int cap)
+int head[MAXN],edgeid;
+void addedge(int from,int to,int flow)
 {
-    Edge& e=edges[tot];
-    e.from=from, e.to=to, e.cap=cap;
-    nxt[tot]=head[from];
-    head[from]=tot++;
+    edges[edgeid]={from,to,flow,head[from]};
+    head[from]=edgeid++;
 }
-void add2(int from,int to,int cap)
+void addflow(int from,int to,int flow)
 {
-    // printf("%d %d %d\n",from,to,cap);
-    add1(from,to,cap);
-    add1(to,from,0);
-}
-int src,dst;
-int dep[MAXN];
-bool bfs()
-{
-    mset(dep,0);
-    dep[src]=1;
-    queue<int> Q;
-    Q.push(src);
-    while(!Q.empty())
-    {
-        int u=Q.front(); Q.pop();
-        for(int i=head[u];~i;i=nxt[i])
-        {
-            Edge& e=edges[i];
-            if(!e.cap || dep[e.to])continue;
-            dep[e.to]=dep[u]+1;
-            Q.push(e.to);
-        }
-    }
-    return dep[dst]!=0;
-}
-int cur[MAXN];
-int dfs(int u,int flow)
-{
-    if(u==dst)return flow;
-    for(int& i=cur[u];~i;i=nxt[i])
-    {
-        Edge& e=edges[i];
-        if(!e.cap || dep[e.to]!=dep[u]+1)continue;
-        int f=dfs(e.to, min(flow, e.cap));
-        if(f)
-        {
-            e.cap-=f;
-            edges[i^1].cap+=f;
-            return f;
-        }
-    }
-    return 0;
-}
-int dinic()
-{
-    int ans=0;
-    while(bfs())
-    {
-        memcpy(cur,head,sizeof(cur));
-        int f;
-        while(f=dfs(src,INF))ans+=f;
-    }
-    return ans;
+    addedge(from,to,flow);
+    addedge(to,from,0);
 }
 
-char tools[10000];
+int dep[MAXN], cur[MAXN], num[MAXN], pre[MAXN];
+void bfs(int n, int dst)
+{
+    fill_n(dep, n + 1, n);
+    dep[dst] = 0;
+    queue<int> Q;
+    Q.push(dst);
+    while (!Q.empty())
+    {
+        int u = Q.front(); Q.pop();
+        for (int i = head[u]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i ^ 1];
+            if (dep[e.from] < n || e.flow <= 0) continue;
+            dep[e.from] = dep[u] + 1;
+            Q.push(e.from);
+        }
+    }
+}
+int augment(int src, int dst)
+{
+    int f = INF;
+    for (int u = dst; u != src; u = edges[pre[u]].from)
+        f = min(f, edges[pre[u]].flow);
+    for (int u = dst; u != src; u = edges[pre[u]].from)
+    {
+        edges[pre[u]].flow -= f;
+        edges[pre[u] ^ 1].flow += f;
+    }
+    return f;
+}
+int isap(int n, int src, int dst)
+{
+    fill_n(num, n + 1, 0);
+    bfs(n, dst);
+    for (int i = 1; i <= n; i++)
+    {
+        num[dep[i]]++;
+        cur[i] = head[i];
+    }
+    int u = src;
+    int ans = 0;
+    while (dep[src] < n)
+    {
+        if (u == dst)
+        {
+            ans += augment(src, dst);
+            u = src;
+            continue;
+        }
+        bool found = false;
+        for (int &i = cur[u]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i];
+            if (dep[e.to] + 1 != dep[u] || e.flow <= 0) continue;
+            found = true;
+            u = e.to;
+            pre[u] = i;
+            break;
+        }
+        if (!found)
+        {
+            int mindep = n - 1;
+            for (int i = head[u]; ~i; i = edges[i].nxt)
+            {
+                Edge &e = edges[i];
+                if (e.flow > 0) mindep = min(mindep, dep[e.to]);
+            }
+            if (--num[dep[u]] == 0) break;
+            num[dep[u] = mindep + 1]++;
+            cur[u] = head[u];
+            if (u != src) u = edges[pre[u]].from;
+        }
+    }
+    return ans; // 返回最大流的值
+}
+
+bool vis[MAXN];
+void dfs(int u)
+{
+    vis[u]=true;
+    for(int i=head[u];~i;i=edges[i].nxt)
+    {
+        // if(i&1)continue;
+        Edge& e=edges[i];
+        if(e.flow==0 || vis[e.to])continue;
+        dfs(e.to);
+    }
+}
+
 int main()
 {
 #ifdef __DEBUG__
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    mset(head,-1);
-    int m,n; readi2(m,n);
-    src=0, dst=105;
+    ios::sync_with_stdio(false); cin.tie(nullptr);
+    int m,n; cin>>m>>n;
+    int src=m+n+1, dst=src+1;
+    fill_n(head,dst+5,-1), edgeid=0;
     int sum=0;
+    cin.get();
     rep(i,1,m)
     {
-        int t; readi(t);
+        string line; getline(cin,line);
+        stringstream ss(line);
+        int t; ss>>t;
         sum+=t;
-        add2(src,i,t);
-        cin.getline(tools, 10000);
-        int ulen = 0, tool;
-        while (sscanf(tools + ulen, "%d", &tool) == 1)
-        {
-            add2(i,50+tool,INF);
-            if (tool == 0)
-                ulen++;
-            else
-            {
-                while (tool)
-                {
-                    tool /= 10;
-                    ulen++;
-                }
-            }
-            ulen++;
-        }
+        addflow(src,i,t);
+        while(ss>>t)addflow(i,m+t,INF);
     }
     rep(i,1,n)
     {
-        int t; readi(t);
-        add2(50+i,dst,t);
+        int t; cin>>t;
+        addflow(m+i,dst,t);
     }
-    int ans=sum-dinic();
-    rep(i,1,m)
-    {
-        if(dep[i]>0)printf("%d ",i);
-    }
-    printf("\n");
-    rep(i,1,n)
-    {
-        if(dep[50+i]>0)printf("%d ",i);
-    }
-    printf("\n%d",ans);
+    int ans=sum-isap(dst,src,dst);
+    dfs(src);
+    rep(i,1,m)if(vis[i])cout<<i<<' ';
+    cout<<'\n';
+    rep(i,1,n)if(vis[m+i])cout<<i<<' ';
+    cout<<'\n'<<ans;
     return 0;
 }
