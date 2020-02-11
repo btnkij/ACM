@@ -1,5 +1,5 @@
 /**
-* Number:p3377
+* Number:luogu3377
 * Title:【模板】左偏树（可并堆）
 * Status:AC
 * Tag:[左偏树, 可并堆]
@@ -8,12 +8,12 @@
 
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
 using namespace std;
 
 #define INF 0x3f3f3f3f
@@ -33,32 +33,36 @@ inline int reads(char *s1) { return scanf("%s", s1); }
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
 const int MAXN = 1e5 + 10;
+struct Node // 左偏树节点
+{
+    int dis, son[2]; // 左偏树节点必要信息：dis-到最近空节点的距离 son[]-左右儿子
+    int val, pos;    // val-值 pos-位置
+    bool operator<(const Node &rhs) const
+    {
+        return val < rhs.val || val == rhs.val && pos < rhs.pos;
+    }
+} tree[MAXN];
+int join(int x, int y) // 合并x,y所在的堆，保证x,y都是堆顶，返回新的根
+{
+    if (!x || !y)
+        return x | y;      // 若x,y其中一个为空节点，返回另外一个节点
+    if (tree[y] < tree[x]) // 保证小根堆的性质
+        swap(x, y);
+    int &lc = tree[x].son[0], &rc = tree[x].son[1];
+    rc = join(rc, y);
+    if (tree[lc].dis < tree[rc].dis) // 保证左偏性：左链长于右链
+        swap(lc, rc);
+    tree[x].dis = tree[rc].dis + 1;
+    return x;
+}
 
-int val[MAXN], dis[MAXN], fa[MAXN], son[MAXN][2]; // 值，深度，并查集，左右儿子
-int findr(int x)
+int fa[MAXN];
+int findr(int x) // 并查集模板
 {
     return x == fa[x] ? x : fa[x] = findr(fa[x]);
 }
-int join(int x, int y) // 合并以x, y为根的堆, x或y作为新的根
-{
-    if (x == 0 || y == 0)
-        return x | y;
-    if (val[x] > val[y] || (val[x] == val[y] && x > y))
-        swap(x, y);
-    son[x][1] = join(son[x][1], y);
-    if (dis[son[x][0]] < dis[son[x][1]])
-        swap(son[x][0], son[x][1]);
-    dis[x] = dis[son[x][1]] + 1;
-    return fa[x] = fa[son[x][0]] = fa[son[x][1]] = x;
-}
-void pop(int x) // 删除节点x, x是堆的根
-{
-    fa[son[x][0]] = son[x][0];
-    fa[son[x][1]] = son[x][1];
-    fa[x] = join(son[x][0], son[x][1]);
-}
 
-bool del[MAXN]; // 是否被删除
+bool del[MAXN]; // 标记节点是否被删除
 int main()
 {
 #ifdef __DEBUG__
@@ -66,41 +70,41 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     int n, m;
-    readi(n, m);
-    dis[0] = -1;
+    readi(n, m);             // n-小根堆个数 m-操作数
+    tree[0].dis = -1;        // 左偏树初始化：空节点的dis=-1
+    iota(fa, fa + n + 1, 0); // 并查集的初始化
     rep(i, 1, n)
     {
-        readi(val[i]);
-        fa[i] = i;
+        readi(tree[i].val); // 初始每个节点单独成堆
+        tree[i].pos = i;
     }
     while (m--)
     {
         int op;
         readi(op);
-        if (op == 1) // 合并x、y所在的堆
+        if (op == 1) // 合并x,y所在的堆
         {
             int x, y;
             readi(x, y);
-            if (del[x] || del[y])
-                continue;
-            int rx = findr(x), ry = findr(y);
-            if (rx == ry) // 如果在一个堆中
-                continue;
-            join(rx, ry);
+            if (del[x] || del[y] || findr(x) == findr(y))
+                continue;               // 无效操作
+            x = findr(x), y = findr(y); // 找到堆顶
+            fa[x] = fa[y] = join(x, y); // 注意维护并查集
         }
-        else if (op == 2) // 删除x所在堆的最小值
+        else if (op == 2) // 弹出x所在堆的最小值
         {
             int x;
             readi(x);
             if (del[x])
-                printf("-1\n");
-            else
             {
-                int rx = findr(x);
-                printf("%d\n", val[rx]); // 打印最小值
-                del[rx] = true;
-                pop(rx); // 删除
+                puts("-1"); // 无效操作
+                continue;
             }
+            x = findr(x);                // 找到堆顶
+            printf("%d\n", tree[x].val); // 输出最小值
+            int lc = tree[x].son[0], rc = tree[x].son[1];
+            fa[x] = fa[lc] = fa[rc] = join(lc, rc); // 合并左右儿子，即弹出堆顶
+            del[x] = true;                          // 删除标记
         }
     }
     return 0;
