@@ -82,7 +82,7 @@ int main()
     int n, m; // n-序列长度 m-询问数
     readi(n, m);
     rep(i, 1, n) readi(c[i]);
-    sz = (int)sqrt(n + 1), nblock = (n + sz - 1) / sz; // 最优分块复杂度为O(n^(3/2))
+    sz = (int)sqrt(n + 1); // 最优分块复杂度为O(n^(3/2))
     rep(i, 1, m) // 离线所有询问
     {
         readi(querys[i].L, querys[i].R);
@@ -97,7 +97,7 @@ int main()
             add(c[++wndR]);
         while (wndL > q.L)
             add(c[--wndL]);
-        while (wndR > q.R) // 在缩小窗口
+        while (wndR > q.R) // 再缩小窗口
             erase(c[wndR--]);
         while (wndL < q.L)
             erase(c[wndL++]);
