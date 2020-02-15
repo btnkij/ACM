@@ -3462,30 +3462,28 @@ int n, dis[510];
 bool vis[510];
 bool spfa(int u)
 {
-    vis[u]=true;
-    bool ans=false;
-    for(int i=head[u];~i;i=nxt[i])
+    vis[u] = true;
+    bool ans = false;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        int v=edges[i].to;
-        int c=edges[i].dis;
-        if(dis[u]+c<dis[v])
+        int v = edges[i].to, c = edges[i].dis;
+        if (dis[u] + c < dis[v]) // 改为“>”则判正环
         {
-            dis[v]=dis[u]+c;
-            if(vis[v] || spfa(v))
+            dis[v] = dis[u] + c;
+            if (vis[v] || spfa(v))
             {
-                ans=true;
+                ans = true;
                 break;
             }
         }
     }
-    vis[u]=false;
+    vis[u] = false;
     return ans;
 }
 bool check() // 存在负环返回true
 {
-    std::fill(vis, vis+n+1, false);
-    std::fill(dis, dis+n+1, 0);
-    for(int i=1;i<=n;i++)if(spfa(i))return true;
+    std::fill(dis, dis + n + 1, 0); // n-节点个数。增加超级源点，到其他点距离为0
+    for (int i = 1; i <= n; i++) if (spfa(i)) return true;
     return false;
 }
 ```
