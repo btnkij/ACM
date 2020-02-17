@@ -47,41 +47,45 @@ int main()
 }
 ```
 
-### 输入输出优化
+
+
+### 输入输出优化（有符号整数）
 
 ```c++
-// 读非负int
-inline int readu()
+template <typename T>
+inline void read(T &x)
 {
-    register int num = 0;
-    register char ch;
-    do{ ch = getchar(); }while(ch < '0' || ch > '9');
-    do{ 
-        num = (num << 3) + (num << 1) + (ch & 0xF); 
-        ch = getchar(); 
-    }while('0' <= ch && ch <= '9');
-    return num;
+    int sgn = x = 0, c = getchar();
+    while (!isdigit(c)) f |= c == '-', c = getchar();
+    while (isdigit(c)) x = (x << 3) + (x << 1) + (c & 0xF), c = getchar();
+    if (f) x = -x;
 }
 
-// 读任意int
-inline int read()
+template <typename T, typename... Args>
+inline void read(T &x, Args &... args)
 {
-    register int num = 0;
-    register char ch;
-    register bool sign = false;
-    do
-    {
-        ch = getchar();
-        if(ch == '-')sign = true;
-    }while(ch < '0' || ch > '9');
-    do{ 
-        num = (num << 3) + (num << 1) + (ch & 0xF); 
-        ch = getchar(); 
-    }while('0' <= ch && ch <= '9');
-    if(sign)num = -num;
-    return num;
+    read(x); read(args...);
+}
+
+template <typename T>
+void write(T x)
+{
+    if (x < 0) x = -x, putchar('-');
+    if (x > 9) write(x / 10);
+    putchar(0x30 | x % 10);
 }
 ```
+
+
+
+### 预编译指令优化
+
+```c++
+#pragma comment(linker, "/STACK:102400000,102400000")
+#pragma GCC optimize ("O2")
+```
+
+
 
 ### 排序
 
@@ -867,7 +871,7 @@ int main()
 
 【题目】输入序列$a_i$，维护任意区间的最大子串和，带单点修改。
 
-【思路】定义以$a_i$结尾的最大子串和$f_i=\max\{f_{i-1}+a_i,a_i\}$，则要求的答案为$g_i=\max\{g_{i-1},f_i\}$，其中$f_0=g_0=0$。重载矩阵乘法：$C=A \times B \rightarrow c_{ij}=\max_k\{a_{ik}+b_{kj}\}$。记系数矩阵$$A_i=\begin{bmatrix}a_i & -\infty & a_i \\ a_i & 0 & a_i \\ -\infty & -\infty & 0\end{bmatrix}$$，将转移方程写成矩阵形式：$$\begin{bmatrix}f_i\\g_i\\0\end{bmatrix} = A_i \begin{bmatrix}f_{i-1}\\g_{i-1}\\0\end{bmatrix}$$。用线段树维护矩阵$A_i$的乘积。
+【思路】定义以$a_i$结尾的最大子串和$f_i=\max\{f_{i-1}+a_i,a_i\}$，则要求的答案为$g_i=\max\{g_{i-1},f_i\}$，其中$f_0=g_0=0$。重载矩阵乘法：$C=A \times B \rightarrow c_{ij}=\max_k\{a_{ik}+b_{kj}\}$。记系数矩阵$$A_i=\begin{bmatrix}a_i & -\infty & a_i \\ a_i & 0 & a_i \\ -\infty & -\infty & 0\end{bmatrix}$$，将转移方程写成矩阵形式：$$\begin{bmatrix}f_i\\g_i\\0\end{bmatrix} = A_i \times  \begin{bmatrix}f_{i-1}\\g_{i-1}\\0\end{bmatrix}$$。用线段树维护矩阵$A_i$的乘积。
 
 ```c++
 const int MAXN = 5e4 + 10;
@@ -942,7 +946,7 @@ int main()
         else if (op == 1) // 查询[x,y]的最大子串和
         {
             Node ans = query(1, 1, n, x, y);
-            printf("%d\n", ans.dp[1][2]); // ans*[f0 g0 0]^T
+            printf("%d\n", ans.dp[1][2]); // ans*[f0 g0 0]^T得到最终答案
         }
     }
     return 0;
