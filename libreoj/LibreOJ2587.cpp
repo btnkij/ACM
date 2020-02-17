@@ -37,7 +37,7 @@ struct Edge
 {
     int from, to, nxt;
 };
-struct Graph
+struct Graph // 链式前向星模板
 {
     Edge edges[MAXM * 4];
     int head[MAXN * 2], edgeid;
@@ -55,7 +55,7 @@ struct Graph
 int dfn[MAXN], low[MAXN], dfsid;
 int grpid;
 vector<int> trace;
-int w[MAXN * 2], totsz;
+int w[MAXN * 2], totsz; // w[]-圆方树上节点权值 totsz-统计连通分量的节点数
 void tarjan(int u)
 {
     dfn[u] = low[u] = ++dfsid;
@@ -63,7 +63,7 @@ void tarjan(int u)
     totsz++;
     for (int i = G.head[u]; ~i; i = G.edges[i].nxt)
     {
-        int v = G.edges[i].to;
+        int v = G.edges[i].to; // 可以经过反向边到父节点
         if (!dfn[v])
         {
             tarjan(v);
@@ -71,8 +71,8 @@ void tarjan(int u)
             if (low[v] == dfn[u])
             {
                 w[++grpid] = 1;
-                G1.addedge(grpid, u), G1.addedge(u, grpid);
-                for (int x; x != v; trace.pop_back())
+                G1.addedge(grpid, u), G1.addedge(u, grpid); // 连“圆点-方点”边
+                for (int x; x != v; trace.pop_back())       // 注意不是退栈到u
                 {
                     x = trace.back();
                     G1.addedge(x, grpid), G1.addedge(grpid, x);
@@ -89,8 +89,8 @@ ll ans;
 int n, m, sz[MAXN * 2];
 void dp(int u, int pre)
 {
-    sz[u] = int(u <= n);
-    ll cnt = 0;
+    sz[u] = int(u <= n); // 子树中圆点的个数
+    ll cnt = 0;          // 统计有多少条路径经过u
     for (int i = G1.head[u]; ~i; i = G1.edges[i].nxt)
     {
         int v = G1.edges[i].to;
@@ -110,7 +110,7 @@ int main()
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    readi(n, m);
+    readi(n, m); // n-节点数 m-边数
     G.init(), G1.init();
     repne(i, 0, m)
     {
@@ -118,12 +118,12 @@ int main()
         readi(u, v);
         G.addedge(u, v), G.addedge(v, u);
     }
-    fill(w + 1, w + n + 1, -1);
-    grpid = n;
-    rep(i, 1, n) if (!dfn[i])
+    fill(w + 1, w + n + 1, -1); // 所有圆点权值设为-1
+    grpid = n;                  // 方点从n+1开始编号
+    rep(i, 1, n) if (!dfn[i])   // 处理每一个连通分量
     {
         totsz = 0;
-        trace.clear();
+        trace.clear(); // 注意Tarjan前的初始化
         tarjan(i);
         dp(i, -1);
     }
