@@ -6,7 +6,7 @@
 
 
 
-## 未分类
+## 杂项
 
 ### include & define
 
@@ -854,6 +854,96 @@ int main()
         int root = build(k); // 建立虚树
         ll ans = dp(root);   // 树型DP
         printf("%lld\n", ans);
+    }
+    return 0;
+}
+```
+
+
+
+### 动态DP
+
+【题号】SPOJ1716
+
+【题目】输入序列$a_i$，维护任意区间的最大子串和，带单点修改。
+
+【思路】定义以$a_i$结尾的最大子串和$f_i=\max\{f_{i-1}+a_i,a_i\}$，则要求的答案为$g_i=\max\{g_{i-1},f_i\}$，其中$f_0=g_0=0$。重载矩阵乘法：$C=A \times B \rightarrow c_{ij}=\max_k\{a_{ik}+b_{kj}\}$。记系数矩阵$$A_i=\begin{bmatrix}a_i & -\infty & a_i \\ a_i & 0 & a_i \\ -\infty & -\infty & 0\end{bmatrix}$$，将转移方程写成矩阵形式：$$\begin{bmatrix}f_i\\g_i\\0\end{bmatrix} = A_i \begin{bmatrix}f_{i-1}\\g_{i-1}\\0\end{bmatrix}$$。用线段树维护矩阵$A_i$的乘积。
+
+```c++
+const int MAXN = 5e4 + 10;
+int a[MAXN];
+struct Node
+{
+    int dp[3][3];
+    Node() // 初始化为乘法零元
+    {
+        dp[0][0] = 0, dp[0][1] = -INF, dp[0][2] = -INF;
+        dp[1][0] = -INF, dp[1][1] = 0, dp[1][2] = -INF;
+        dp[2][0] = -INF, dp[2][1] = -INF, dp[2][2] = 0;
+    }
+    Node(int val)
+    {
+        dp[0][0] = val, dp[0][1] = -INF, dp[0][2] = val;
+        dp[1][0] = val, dp[1][1] = 0, dp[1][2] = val;
+        dp[2][0] = -INF, dp[2][1] = -INF, dp[2][2] = 0;
+    }
+    Node operator*(const Node &rhs) const // 定义乘法运算c[i][j]=max(a[i][k]+b[k][j])
+    {
+        Node ans(-INF);
+        rep2(i, 0, 2, j, 0, 2)
+        {
+            int &f = ans.dp[i][j];
+            rep(k, 0, 2) f = max(f, dp[i][k] + rhs.dp[k][j]);
+        }
+        return ans;
+    }
+} tree[MAXN * 4]; // 线段树模板：维护区间矩阵乘积
+void pushup(int p)
+{
+    tree[p] = tree[p << 1] * tree[p << 1 | 1];
+}
+void build(int p, int lt, int rt)
+{
+    if (lt == rt) { tree[p] = Node(a[lt]); return; }
+    int mid = (lt + rt) >> 1;
+    build(p << 1, lt, mid);
+    build(p << 1 | 1, mid + 1, rt);
+    pushup(p);
+}
+void update(int p, int lt, int rt, int qpos, int qval)
+{
+    if (lt == rt) { tree[p] = Node(qval); return; }
+    int mid = (lt + rt) >> 1;
+    if (qpos <= mid) update(p << 1, lt, mid, qpos, qval);
+    else update(p << 1 | 1, mid + 1, rt, qpos, qval);
+    pushup(p);
+}
+Node query(int p, int lt, int rt, int qlt, int qrt)
+{
+    if (qlt <= lt && rt <= qrt) return tree[p];
+    int mid = (lt + rt) >> 1;
+    Node ans;
+    if (qlt <= mid) ans = ans * query(p << 1, lt, mid, qlt, qrt);
+    if (mid < qrt) ans = ans * query(p << 1 | 1, mid + 1, rt, qlt, qrt);
+    return ans;
+}
+
+int main()
+{
+    int n; readi(n); // 序列长度
+    rep(i, 1, n) readi(a[i]);
+    build(1, 1, n); // 建线段树
+    int q; readi(q); // 询问数
+    while (q--)
+    {
+        int op, x, y; readi(op, x, y);
+        if (op == 0) // 修改a[x]的值为y
+            update(1, 1, n, x, y);
+        else if (op == 1) // 查询[x,y]的最大子串和
+        {
+            Node ans = query(1, 1, n, x, y);
+            printf("%d\n", ans.dp[1][2]); // ans*[f0 g0 0]^T
+        }
     }
     return 0;
 }
@@ -3967,7 +4057,7 @@ struct Edge
 struct Graph // 链式前向星模板
 {
     Edge edges[MAXM * 4];
-    int head[MAXN * 2], edgeid;
+    int head[MAXN * 2], edgeid; // 注意圆方树要开2倍的节点
     void init()
     {
         clr(head, -1), edgeid = 0;
