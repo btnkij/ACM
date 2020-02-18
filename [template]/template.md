@@ -36,7 +36,6 @@ inline int reads(char* s1) { return scanf("%s", s1); }
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-
 int main()
 {
 #ifdef __DEBUG__
@@ -56,9 +55,11 @@ template <typename T>
 inline void read(T &x)
 {
     int sgn = x = 0, c = getchar();
-    while (!isdigit(c)) f |= c == '-', c = getchar();
-    while (isdigit(c)) x = (x << 3) + (x << 1) + (c & 0xF), c = getchar();
-    if (f) x = -x;
+    while (!isdigit(c))
+        sgn |= c == '-', c = getchar();
+    while (isdigit(c))
+        x = (x << 3) + (x << 1) + (c & 0xF), c = getchar();
+    if (sgn) x = -x;
 }
 
 template <typename T, typename... Args>
@@ -73,6 +74,12 @@ void write(T x)
     if (x < 0) x = -x, putchar('-');
     if (x > 9) write(x / 10);
     putchar(0x30 | x % 10);
+}
+
+template <typename T>
+inline void writeln(T x)
+{
+    write(x); putchar('\n');
 }
 ```
 
