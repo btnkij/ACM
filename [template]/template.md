@@ -2529,7 +2529,7 @@ int main()
 
 
 
-### 字典树 Trie
+### 字典树 Trie（待整理）
 
 ```c++
 struct Trie
@@ -4196,7 +4196,7 @@ int main()
 
 
 
-### 圆方树
+### 圆方树（待整理）
 
 【题号】LibreOJ2587
 
@@ -4381,7 +4381,7 @@ int main()
 
 
 
-#### 最大匹配 Hopcroft Karp
+#### 最大匹配 Hopcroft Karp（待整理）
 
 ```c++
 const int MAXN = 100010;
@@ -4547,6 +4547,10 @@ int main()
     return 0;
 }
 ```
+
+
+
+### 一般图匹配 带花树（待补充）
 
 
 
@@ -5277,6 +5281,10 @@ struct manacher
     }
 };
 ```
+
+
+
+### AC自动机（带补充）
 
 
 
