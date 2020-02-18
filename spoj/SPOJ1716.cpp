@@ -2,7 +2,7 @@
 * Number:spoj1716
 * Title:GSS3 - Can you answer these queries III
 * Status:AC
-* Tag:[动态DP]
+* Tag:[动态DP, 线段树, 矩阵]
 **/
 
 #include <cstdio>
