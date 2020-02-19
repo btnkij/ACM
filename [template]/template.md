@@ -1204,6 +1204,8 @@ struct binary_indexed_tree_2d
 };
 ```
 
+
+
 ### 平衡树
 
 #### Treap
@@ -3754,9 +3756,9 @@ void floyd(int n) // 求任意两点的最短路，n为点的个数
 
 
 
-### 最小生成树
+### 生成树
 
-#### Kruskal
+#### 最小生成树 Kruskal
 
 【题号】LUOGU3366
 
@@ -3811,7 +3813,7 @@ int main()
 
 
 
-#### Prim
+#### 最小生成树 Prim
 
 ```c++
 // LUOGU3366 Prim解法
@@ -3849,18 +3851,15 @@ int prim(int n)
     int cnt = 1, ans = 0;
     while (!Q.empty())
     {
-        HeapNode node = Q.top();
-        Q.pop();
+        HeapNode node = Q.top(); Q.pop();
         int u = edges[node.id].to;
-        if (vis[u])
-            continue;
+        if (vis[u]) continue;
         ans += node.dis;
         vis[u] = true, cnt++;
         for (int i = head[u]; ~i; i = edges[i].nxt)
         {
             Edge &e = edges[i];
-            if (!vis[e.to])
-                Q.push({i, e.w});
+            if (!vis[e.to]) Q.push({i, e.w});
         }
     }
     return cnt == n ? ans : -1;
@@ -3872,8 +3871,7 @@ int main()
     edgeid = 0, fill_n(head, n + 1, -1); // 链式前向星的初始化
     rep(i, 1, m)
     {
-        int u, v, w;
-        readi(u, v, w);
+        int u, v, w; readi(u, v, w);
         addedge2(u, v, w);
     }
     int ans = prim(n);
@@ -3882,6 +3880,10 @@ int main()
     return 0;
 }
 ```
+
+
+
+#### 最小树形图（带补充）
 
 
 
@@ -4552,7 +4554,7 @@ int main()
 
 
 
-### 一般图匹配 带花树（待补充）
+### 一般图最大匹配 带花树（待补充）
 
 
 

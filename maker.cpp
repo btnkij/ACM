@@ -1,65 +1,108 @@
+/**
+ *    Author: yurzhang
+ *    Date: 2020/02/16
+ *
+ *     Summer Pockets
+ *  - REFLECTION  BLUE -
+ */
+#pragma GCC optimize("Ofast,inline,unroll-loops")
 #include <cstdio>
-#include <cctype>
 #include <cstdlib>
 #include <ctime>
-#define RI register int
-#define CI const int &
-#define Tp template <typename T>
-using namespace std;
-const int N = 100000, R = 1e9;
-class FileInputOutput
-{
-private:
-    static const int S = 1 << 21;
-#define pc(ch) (Ftop < S ? Fout[Ftop++] = ch : (fwrite(Fout, 1, S, stdout), Fout[(Ftop = 0)++] = ch))
-    char Fout[S];
-    int Ftop, pt[15];
+#include <random>
+using std::default_random_engine;
+using std::uniform_int_distribution;
 
-public:
-    Tp inline void write(T x, const char &ch)
-    {
-        if (!x)
-            return (void)(pc('0'), pc(ch));
-        if (x < 0)
-            x = -x, pc('-');
-        RI ptop = 0;
-        while (x)
-            pt[++ptop] = x % 10, x /= 10;
-        while (ptop)
-            pc(pt[ptop--] + 48);
-        pc(ch);
-    }
-    inline void Fend(void)
-    {
-        fwrite(Fout, 1, Ftop, stdout);
-    }
-#undef pc
-} F;
-inline int Rand(CI x, CI opt = 1)
+const int N(1010);
+const int M(50010);
+default_random_engine e;
+
+struct edge
 {
-    if (x == 1)
-        return x * opt;
-    return opt * (1LL * rand() * rand() % (x - 1) + 1);
-}
+    int x, y;
+} st[M];
+int n, m, left, right, u, v, tp;
+int ll, rr, lr, vis[N][N];
+
 int main()
 {
-    freopen("in.txt", "w", stdout);
-    srand(time(0));
-    RI i;
-    for (F.write(N, '\n'), i = 2; i <= N; ++i)
-        F.write(Rand(i - 1), ' '), F.write(i, '\n');
-    for (i = 1; i <= N; ++i)
-        F.write(rand() % 2, i != N ? ' ' : '\n');
-    for (i = 1; i <= N; ++i)
-        F.write(Rand(R, rand() % 2 ? 1 : -1), i != N ? ' ' : '\n');
-    for (F.write(N, '\n'), i = 1; i <= N; ++i)
+    scanf("%d", &n);
+    left = n >> 1;
+    right = n - left;
+    e.seed(time(NULL));
+    uniform_int_distribution<int> getL(1, left), getR(left + 1, n);
+    uniform_int_distribution<int> LL(0, left * (left - 1) / 2);
+    uniform_int_distribution<int> RR(0, right * (right - 1) / 2);
+    uniform_int_distribution<int> LR(0, n << 1);
+    ll = LL(e);
+    rr = RR(e);
+    lr = LR(e);
+    if (e() & 1)
     {
-        int opt = Rand(3) - 1, x = Rand(N);
-        F.write(opt, ' ');
-        if (opt <= 1)
-            F.write(x, '\n');
-        else
-            F.write(x, ' '), F.write(Rand(R, rand() % 2 ? 1 : -1), '\n');
+        ll = 0;
+        m = rr + lr;
+        if (m > 50000)
+        {
+            int x(m - 50000), y(x >> 1);
+            x -= y;
+            rr -= x;
+            lr -= y;
+            m = 50000;
+        }
     }
-    return F.Fend(), 0;
+    else
+    {
+        rr = 0;
+        m = ll + lr;
+        if (m > 50000)
+        {
+            int x(m - 50000), y(x >> 1);
+            x -= y;
+            ll -= x;
+            lr -= y;
+            m = 50000;
+        }
+    }
+    while (ll--)
+    {
+        u = getL(e);
+        v = getL(e);
+        while (u == v || vis[u][v])
+        {
+            u = getL(e);
+            v = getL(e);
+        }
+        vis[u][v] = vis[v][u] = 1;
+        st[++tp] = (edge){u, v};
+    }
+    while (rr--)
+    {
+        u = getR(e);
+        v = getR(e);
+        while (u == v || vis[u][v])
+        {
+            u = getR(e);
+            v = getR(e);
+        }
+        vis[u][v] = vis[v][u] = 1;
+        st[++tp] = (edge){u, v};
+    }
+    while (lr--)
+    {
+        u = getL(e);
+        v = getR(e);
+        while (vis[u][v])
+        {
+            u = getL(e);
+            v = getR(e);
+        }
+        vis[u][v] = vis[v][u] = 1;
+        st[++tp] = (edge){u, v};
+    }
+    freopen("in.txt", "w", stdout);
+    printf("%d %d\n", n, m);
+    for (int i = 1; i <= m; ++i)
+        printf("%d %d\n", st[i].x, st[i].y);
+    fclose(stdout);
+    return 0;
 }
