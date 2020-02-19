@@ -633,7 +633,7 @@ int main()
 
 ### 数位DP
 
-【题号】LIBREOJ10167
+【题号】LiberOJ10167
 
 【题目】求[a, b]之间不含"4"和"62"的数的个数
 
@@ -736,11 +736,13 @@ int main()
 
 
 
-### 虚树优化的树型DP
+### 虚树
 
 【题号】LUOGU2495
 
-【题目】求所有询问点均不能到达根节点的最小割
+【题目】多组询问，求所有询问点均不能到达根节点的最小割。
+
+【思路】对于每次询问，直接树型DP可以解决，观察到状态转移过程中，只有询问点和它们的LCA对DP有影响，将这些点按照原树上的父子关系连成“虚树”，在虚树上DP。时间复杂度为$O(\sum 2k)$，其中$k$为每次询问的点数。
 
 ```c++
 const int MAXN = 251000;
@@ -777,7 +779,7 @@ void dfs(int u, int pre)
     {
         Edge &e = G.edges[i];
         if (e.to == pre) continue;
-        cut[e.to] = min((ll)e.dis, cut[u]);
+        cut[e.to] = min((ll)e.dis, cut[u]); // 计算e.to到根的最小边
         dfs(e.to, u);
     }
     tout[u] = ++dfsid;
@@ -798,12 +800,13 @@ int lca(int x, int y)
 
 bool q[MAXN];                  // 是否是询问的点
 int h[MAXN], trace[MAXN], top; // 询问的点，栈，栈顶
-bool cmp(int x, int y)         // 询问点按照DFS序排序
+bool cmp(int x, int y) // 询问点按照DFS序排序
 {
     return tin[x] < tin[y];
 }
-int build(int k) // 建虚树，只保留询问点及它们的LCA
+int build(int k) // k-询问点数
 {
+    G1.edgeid = 0; // 清空虚树的边
     sort(h, h + k, cmp);
     trace[top = 1] = 1; // 保留根节点
     for (int i = 0; i < k; i++)
@@ -861,8 +864,7 @@ int main()
             readi(h[i]);    // 读入询问点
             q[h[i]] = true; // 标记询问点
         }
-        G1.edgeid = 0;       // 清空虚树的边
-        int root = build(k); // 建立虚树
+        int root = build(k); // 建虚树，只保留询问点及它们的LCA
         ll ans = dp(root);   // 树型DP
         printf("%lld\n", ans);
     }
@@ -1110,7 +1112,7 @@ int main()
 
 ## 数据结构
 
-### ST表 静态区间最值查询
+### ST表 静态区间最值
 
 ```c++
 const int MAXN = 1e5 + 10;
