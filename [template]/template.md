@@ -4303,18 +4303,20 @@ int main()
 
 
 
-### 二分图匹配
+### 匹配
 
-#### 最大匹配 Hungary
+#### 二分图最大匹配 Hungary
 
 【题号】UVA11419
 
-【题目】一次可以消灭一行或一列网格中的敌人，最少几次可以消灭所有敌人
+【题目】一次可以消灭一行或一列网格中的敌人，最少几次可以消灭所有敌人。
+
+【思路】二分图左部一个节点对应一行，右部一个节点对应一列，网格中的节点表达为行节点与列节点的连边，问题转换为用最少的点覆盖所有的边。匈牙利算法求最大匹配，最大匹配等价于最小点覆盖。
 
 ```c++
 const int MAXN = 2e3 + 10;
 const int MAXM = 2e6 + 10;
-struct Edge
+struct Edge // 链式前向星模板
 {
     int from, to, nxt;
 } edges[MAXM];
@@ -4326,8 +4328,8 @@ void addedge(int from, int to)
 }
 
 int lef[MAXN];  // 右支节点对应左支的匹配点，0表示未匹配
-bool vis[MAXN]; // 是否是匈牙利树上的节点
-bool augment(int u) // 増广 u-匈牙利树的根节点
+bool vis[MAXN]; // 是否是DFS树上的节点
+bool augment(int u) // DFS増广 u-匈牙利树的根节点
 {
     vis[u] = true;
     for (int i = head[u]; ~i; i = edges[i].nxt)
@@ -4358,7 +4360,7 @@ void mincover(int nx, int ny) // 输出匹配方案 nx-左支节点数量 ny-右
 {
     fill_n(vis, nx + ny + 1, false);
     for (int i = 1; i <= nx; i++)
-        if (!lef[i]) augment(i);
+        if (!lef[i]) augment(i); // 増广左侧所有点
     for (int i = 1; i <= nx; i++)
         if (!vis[i]) printf(" r%d", i); // 左支
     for (int i = 1; i <= ny; i++)
@@ -4385,7 +4387,7 @@ int main()
 
 
 
-#### 最大匹配 Hopcroft Karp（待整理）
+#### 二分图最大匹配 Hopcroft Karp（待整理）
 
 ```c++
 const int MAXN = 100010;
@@ -4477,7 +4479,7 @@ int hopcroft_karp() // 返回最大匹配数
 
 
 
-#### 最佳完美匹配 KM
+#### 二分图最佳完美匹配 KM
 
 【题号】HDU6346
 
@@ -4554,7 +4556,119 @@ int main()
 
 
 
-### 一般图最大匹配 带花树（待补充）
+#### 一般图最大匹配 带花树
+
+【题号】LUOGU6113
+
+【题目】一般图最大匹配模板题，求无向图的最大匹配数，输出任意匹配方案。
+
+```c++
+const int MAXN = 1010;
+const int MAXM = 5e4 + 10;
+struct Edge // 链式前向星模板
+{
+    int from, to, nxt;
+} edges[MAXM * 2];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = {from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+int fa[MAXN];
+int color[MAXN], pre[MAXN], match[MAXN]; // match[i]-与i匹配的是谁
+int Q[MAXN], qhead, qtail;               // 队列，只压入color=1的点
+int grp[MAXN], grpid;                    // 奇环缩点后的编号
+int findr(int x)                         // 并查集模板
+{
+    return x == fa[x] ? x : fa[x] = findr(fa[x]);
+}
+int lca(int x, int y) // 找到x,y在BFS树上的LCA
+{                     // 采用标记法，x,y交替往上跳，直到遇到被对方标记过的点
+    for (++grpid;; swap(x, y))
+    {
+        if (!x) continue;
+        x = findr(x);
+        if (grp[x] == grpid) return x;
+        else grp[x] = grpid, x = pre[match[x]];
+    }
+}
+void shrink(int u, int v, int root) // 缩奇环
+{
+    while (findr(u) != root)
+    {
+        pre[u] = v, v = match[u];
+        if (color[v] == 2)
+            color[v] = 1, Q[qtail++] = v; // 如果颜色变为1，压入队列
+        fa[u] = fa[v] = root;
+        u = pre[v];
+    }
+}
+bool augment(int n, int src) // BFS増广
+{
+    iota(fa, fa + n + 1, 0); // 并查集初始化
+    fill_n(color, n + 1, 0), fill_n(pre, n + 1, 0); // 注意color[]和pre[]清零
+    color[src] = 1;
+    qhead = qtail = 0; // 队列初始化
+    Q[qtail++] = src;
+    for (int u = Q[qhead]; qhead < qtail; u = Q[++qhead])
+    {
+        for (int i = head[u]; ~i; i = edges[i].nxt)
+        {
+            int v = edges[i].to;
+            if (color[v] == 2 || findr(u) == findr(v)) // 如果找到偶环或者被缩为一点
+                continue;
+            if (!color[v]) // 如果没有访问过
+            {
+                color[v] = 2, pre[v] = u;
+                if (!match[v]) // 如果找到一个未匹配点，増广成功
+                {
+                    for (int x = v; x;) // 反转这条链的匹配，匹配数+1
+                    {
+                        int tmp = match[pre[x]];
+                        match[x] = pre[x], match[pre[x]] = x;
+                        x = tmp;
+                    }
+                    return true;
+                }
+                color[match[v]] = 1;
+                Q[qtail++] = match[v];
+            }
+            else if (color[v] == 1) // 如果找到奇环
+            {
+                int root = lca(u, v);
+                shrink(u, v, root), shrink(v, u, root);
+            }
+        }
+    }
+    return false;
+}
+int blossom(int n) // n-节点数 带花树算法：返回最大匹配数，匹配方案在match[]中
+{
+    int ans = 0;
+    for (int i = 1; i <= n; i++)
+        if (!match[i])
+            ans += augment(n, i);
+    return ans;
+}
+
+int main()
+{
+    int n, m; readi(n, m); // n-节点数 m-边数
+    clr(head, -1); // 链式前向星的初始化
+    repne(i, 0, m)
+    {
+        int u, v; readi(u, v);
+        addedge(u, v), addedge(v, u); // 无向图连边
+    }
+    int maxmatch = blossom(n);
+    printf("%d\n", maxmatch); // 输出最大匹配数
+    for (int i = 1; i <= n; i++)
+        printf("%d ", match[i]); // 输出匹配方案，未匹配的输出0
+    return 0;
+}
+```
 
 
 
