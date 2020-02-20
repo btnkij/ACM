@@ -45,9 +45,9 @@ void addedge(int from, int to)
     head[from] = edgeid++;
 }
 
-int lef[MAXN];  // 右支节点对应左支的匹配点，0表示未匹配
-bool vis[MAXN]; // 是否是匈牙利树上的节点
-bool dfs(int u) // 増广 u-匈牙利树的根节点
+int match[MAXN];    // match[i]-与节点i匹配的是谁，0表示未匹配
+bool vis[MAXN];     // 是否是DFS树上的节点
+bool augment(int u) // 増广 u-DFS树的根节点
 {
     vis[u] = true;
     for (int i = head[u]; ~i; i = edges[i].nxt)
@@ -56,39 +56,40 @@ bool dfs(int u) // 増广 u-匈牙利树的根节点
         if (vis[v])
             continue;
         vis[v] = true;
-        if (!lef[v] || dfs(lef[v]))
+        if (!match[v] || augment(match[v]))
         {
-            lef[u] = v, lef[v] = u;
+            match[u] = v, match[v] = u;
             return true;
         }
     }
     return false;
 }
-// 最大匹配数
-int maxmatch(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
-{
+int hungary(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
+{                           // 返回最大匹配数，匹配方案保存在match[]
     int ans = 0;
-    fill_n(lef, nx + ny + 1, 0);
+    fill_n(match, nx + ny + 1, 0);
     for (int i = 1; i <= nx; i++)
     {
         fill_n(vis, nx + ny + 1, false);
-        ans += dfs(i);
+        ans += augment(i);
     }
     return ans;
 }
-// 输出最小点覆盖所选节点的编号
 void mincover(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
 {
+    int maxmatch = hungary(nx, ny);
+    printf("%d\n", maxmatch); // 输出最大匹配数
     fill_n(vis, nx + ny + 1, false);
     for (int i = 1; i <= nx; i++)
-        if (!lef[i])
-            dfs(i);
-    for (int i = 1; i <= nx; i++)
-        if (!vis[i])
-            printf(" r%d", i); // 左支
+        if (!match[i])            // 左部没有匹配的点一定连接没有覆盖的边
+            augment(i);           // 最小覆盖包含它右部有匹配的点
+    for (int i = 1; i <= nx; i++) // 输出匹配方案
+        if (!vis[i])              // 选择了右部点后剩下的没有标记的左部点是覆盖点
+            printf(" r%d", i);
     for (int i = 1; i <= ny; i++)
-        if (vis[nx + i])
-            printf(" c%d", i); // 右支
+        if (vis[nx + i]) // 选择的右部的点
+            printf(" c%d", i);
+    puts("");
 }
 
 int main()
@@ -108,9 +109,7 @@ int main()
             readi(x, y);
             addedge(x, r + y); // 离散建图 边表示点，行号连列号
         }
-        printf("%d", maxmatch(r, c)); // 最少次数
-        mincover(r, c);               // 选择的行列
-        puts("");
+        mincover(r, c);
     }
     return 0;
 }
