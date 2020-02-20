@@ -4331,7 +4331,7 @@ int match[MAXN];    // match[i]-与节点i匹配的是谁，0表示未匹配
 bool vis[MAXN];     // 是否是DFS树上的节点
 bool augment(int u) // DFS増广 u-DFS树的根节点
 {
-    vis[u] = true; // 标记左部点
+    vis[u] = true; // 标记左部点，仅在输出最小点覆盖时有用，求最大匹配时可去掉
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
@@ -4392,93 +4392,78 @@ int main()
 
 
 
-#### 二分图最大匹配 Hopcroft-Karp（待整理）
+#### 二分图最大匹配 Hopcroft-Karp
 
 ```c++
-const int MAXN = 100010;
-const int MAXM = 300010;
-struct Edge
+// UVA11419 Hopcroft-Karp解法，main函数同Hungary模板
+int dep[MAXN], maxdep;        // dep[]-路径长度 maxdep-findpath的最大深度
+int match[MAXN];              // match[i]-i和谁匹配
+bool vis[MAXN];               // Hungary算法中标记DFS树上的节点
+bool findpath(int nx, int ny) // BFS搜索多条不相交的増广路
 {
-    int from, to, nxt;
-} edges[MAXM];
-int head[MAXN], edgeid;
-void addedge(int from, int to)
-{
-    edges[edgeid] = (Edge){from, to, head[from]};
-    head[from] = edgeid++;
-}
-
-int nx, ny, m; // 左支点数, 右支点数, 边数
-int dep[MAXN], d;
-int match[MAXN]; // i和谁匹配
-bool vis[MAXN];
-bool bfs()
-{
-    d = INF;
-    std::queue<int> Q;
-    std::fill_n(dep, nx + ny + 1, 0);
+    static int Q[MAXN]; // 队列
+    int L = 0, R = 0;   // L-队首 R-队尾
+    fill_n(dep, nx + ny + 1, 0);
     for (int i = 1; i <= nx; i++)
-    {
         if (!match[i])
-        {
-            dep[i] = 1;
-            Q.push(i);
-        }
-    }
-    while (!Q.empty())
+            dep[i] = 1, Q[R++] = i; // 从所有未匹配的点出发BFS
+    maxdep = INF;
+    for (int u = Q[L]; L < R && dep[u] <= maxdep; u = Q[++L])
     {
-        int u = Q.front();
-        Q.pop();
-        if (dep[u] > d)
-            break;
         for (int i = head[u]; ~i; i = edges[i].nxt)
         {
             int v = edges[i].to;
-            if (dep[v])
-                continue;
+            if (dep[v]) continue;
             dep[v] = dep[u] + 1;
             if (!match[v])
-                d = dep[v];
+                maxdep = dep[v]; // 每轮findpath时路径长度+1
             else
-            {
-                dep[match[v]] = dep[v] + 1;
-                Q.push(match[v]);
-            }
+                dep[match[v]] = dep[v] + 1, Q[R++] = match[v];
         }
     }
-    return d != INF;
+    return maxdep != INF;
 }
-int dfs(int u)
+bool augment(int u) // Hungary算法
 {
     for (int i = head[u]; ~i; i = edges[i].nxt)
     {
         int v = edges[i].to;
-        if (vis[v] || dep[u] + 1 != dep[v])
-            continue;
+        if (vis[v] || dep[v] != dep[u] + 1) continue; // 只沿findpath的路径DFS
         vis[v] = true;
-        if (match[v] && dep[v] == d)
-            continue;
-        if (!match[v] || dfs(match[v]))
+        if (match[v] && dep[v] == maxdep) continue;
+        if (!match[v] || augment(match[v]))
         {
             match[u] = v, match[v] = u;
-            return 1;
+            return true;
         }
     }
-    return 0;
+    return false;
 }
-int hopcroft_karp() // 返回最大匹配数
-{
+int hopcroft_karp(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
+{                           	  // 返回最大匹配数，匹配方案保存在match[]
     int ans = 0;
-    while (bfs())
+    fill_n(match, nx + ny + 1, 0);
+    while (findpath(nx, ny)) // 同时寻找多条不相交的増广路径
     {
-        std::fill_n(vis, nx + ny + 1, false);
+        fill_n(vis, nx + ny + 1, false);
         for (int i = 1; i <= nx; i++)
-        {
             if (!match[i])
-                ans += dfs(i);
-        }
+                ans += augment(i); // 沿着找到的路径増广
     }
     return ans;
+}
+void mincover(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
+{
+    int maxmatch = hopcroft_karp(nx, ny);
+    printf("%d\n", maxmatch); // 输出最大匹配数
+    findpath(nx, ny); // 増广所有未匹配点，同Hungary算法求mincover的augment
+    for (int i = 1; i <= nx; i++) // 输出匹配方案
+        if (!dep[i]) // 选择了右部点后剩下的没有标记的左部点是覆盖点
+            printf(" r%d", i);
+    for (int i = 1; i <= ny; i++)
+        if (dep[nx + i]) // 选择的右部的点
+            printf(" c%d", i);
+    puts("");
 }
 ```
 
@@ -4561,7 +4546,7 @@ int main()
 
 
 
-#### 一般图最大匹配 带花树
+#### 一般图最大匹配 Blossom
 
 【题号】LUOGU6113
 
