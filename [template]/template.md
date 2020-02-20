@@ -2361,7 +2361,7 @@ int main()
 
 【题号】LUOGU3377
 
-【题目】维护n个小根堆，支持合并堆、弹出最小值的操作
+【题目】维护n个小根堆，支持合并堆、弹出最小值的操作。
 
 ```c++
 const int MAXN = 1e5 + 10;
@@ -3883,7 +3883,75 @@ int main()
 
 
 
-#### 最小树形图（带补充）
+#### 最小树形图
+
+【题号】LUOGU4716
+
+【题目】最小树形图模板题，有向图上，给定根节点，求边权最小的生成树。
+
+<font color="gray" size="2">朱-刘算法的时间复杂度为$O(nm)$，其中$n$为节点数，$m$为边数。Tarjan优化后复杂度可降为为$O(m+nlogn)$，详见[论文](http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=0EBCB45B7531F2F741045E5C7452754E?doi=10.1.1.402.8171&rep=rep1&type=pdf)。</font>
+
+```c++
+const int MAXN = 110;
+const int MAXM = 10010;
+struct Edge
+{
+    int from, to, dis;
+} edges[MAXM];
+
+int inw[MAXN], pre[MAXN], grp[MAXN], vis[MAXN];
+int zhu_liu(int n, int m, int root) // 朱-刘算法 n-节点数 m-边数 root-根
+{                                   // 返回最小树形图的权值，无解返回-1
+    int ans = 0;
+    while (true)
+    {
+        fill_n(inw, n + 1, INF), inw[root] = 0; // 每个点入边的最小边权
+        for (int i = 0; i < m; i++)
+        {
+            Edge &e = edges[i];
+            if (e.from != e.to && e.dis < inw[e.to]) // 跳过被缩掉的边
+                pre[e.to] = e.from, inw[e.to] = e.dis;
+        }
+        if (find(inw + 1, inw + n + 1, INF) != inw + n + 1) // 如果不连通
+            return -1;                                      // 无解
+        int grpid = 0;
+        fill_n(grp, n + 1, 0), fill_n(vis, n + 1, 0);
+        for (int i = 1; i <= n; i++)
+        {
+            ans += inw[i];
+            int x = i;
+            while (x != root && !grp[x] && vis[x] != i)
+                vis[x] = i, x = pre[x];
+            if (x != root && !grp[x]) // 如果有环，缩为一个点
+            {
+                grp[x] = ++grpid;
+                for (int y = pre[x]; y != x; y = pre[y])
+                    grp[y] = grpid;
+            }
+        }
+        if (grpid == 0) break; // 如果无环，计算结束
+        for (int i = 1; i <= n; i++) // 否则重新建图
+            if (!grp[i])
+                grp[i] = ++grpid; // 其他节点的新编号
+        for (int i = 0; i < m; i++)
+        {
+            Edge &e = edges[i];
+            int t = inw[e.to];
+            e.from = grp[e.from], e.to = grp[e.to]; // 更新边
+            if (e.from != e.to) e.dis -= t; // 更新边权
+        }
+        n = grpid, root = grp[root];
+    }
+    return ans;
+}
+int main()
+{
+    int n, m, root; readi(n, m, root); // n-节点数 m-边数 root-根
+    repne(i, 0, m) readi(edges[i].from, edges[i].to, edges[i].dis);
+    printf("%d", zhu_liu(n, m, root));
+    return 0;
+}
+```
 
 
 
@@ -4481,7 +4549,7 @@ void mincover(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
 const int MAXN = 210;
 int n; // 邻接矩阵大小
 ll adj[MAXN][MAXN]; // 邻接矩阵
-ll lx[MAXN], ly[MAXN]; // 顶标，满足lx[u]+ly[v]>=adj[u][v]
+ll lx[MAXN], ly[MAXN]; // 顶标，算法结束后满足lx[u]+ly[v]==adj[u][v]
 ll slack[MAXN];
 bool visy[MAXN];
 int pre[MAXN];
