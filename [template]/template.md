@@ -4473,17 +4473,19 @@ void mincover(int nx, int ny) // nx-左支节点数量 ny-右支节点数量
 
 【题号】HDU6346
 
-【题目】$n$阶方阵$a_{ij}$，求$\max_{1 \leq i,j \leq n}\{\sum x_i + \sum y_j\}\ s.t.\ x_i+y_j \leq a_{ij}$
+【题目】$n$阶方阵$a_{ij}$，求$\max_{1 \leq i,j \leq n}\{\sum x_i + \sum y_j\}\ s.t.\ x_i+y_j \leq a_{ij}$。
+
+【思路】行列建图，求最佳完美匹配，即所有点都匹配并且权值最大。KM算法的性质保证了中间变量lx[], ly[]是 要求的$x_i, \ y_j$。
 
 ```c++
 const int MAXN = 210;
-int n;                 // 邻接矩阵大小
-ll adj[MAXN][MAXN];    // 邻接矩阵
-ll lx[MAXN], ly[MAXN]; // 顶标，满足lx[u]+ly[v]==adj[u][v]
+int n; // 邻接矩阵大小
+ll adj[MAXN][MAXN]; // 邻接矩阵
+ll lx[MAXN], ly[MAXN]; // 顶标，满足lx[u]+ly[v]>=adj[u][v]
 ll slack[MAXN];
 bool visy[MAXN];
 int pre[MAXN];
-int match[MAXN];      // 与右侧v匹配的是match[v]
+int match[MAXN]; // 与右侧v匹配的是match[v]
 void augment(int src) // BFS増广
 {
     fill_n(visy, n + 1, false);
@@ -4515,7 +4517,7 @@ void augment(int src) // BFS増广
     for (; y; y = pre[y])
         match[y] = match[pre[y]];
 }
-ll km() // 返回最大匹配权值，match为匹配结果
+ll km() // 返回最大匹配权值，match[]为匹配结果
 {
     rep(i, 1, n) lx[i] = *max_element(adj[i] + 1, adj[i] + n + 1);
     fill_n(ly, n + 1, 0);
