@@ -136,12 +136,12 @@ int main()
     addflow(dst, src, INF);             // 汇点向源点连容量为INF的边，并记录这条边的ID
     if (dinic(idst, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
     {
-        for (int i = head[isrc]; ~i; i = edges[i].nxt)
-            edges[i].to = 0;
-        for (int i = head[idst]; ~i; i = edges[i].nxt)
-            edges[i].to = 0;
-        edges[id].to = edges[id ^ 1].to = 0; // 删除点isrc、点idst和边id
         int ans = edges[id ^ 1].flow;        // 先加上可行流
+        for (int i = head[isrc]; ~i; i = edges[i].nxt)
+            edges[i ^ 1].to = 0;
+        for (int i = head[idst]; ~i; i = edges[i].nxt)
+            edges[i ^ 1].to = 0;
+        edges[id].to = edges[id ^ 1].to = 0; // 删除点isrc、点idst和边id
         ans += dinic(n + 2, src, dst);       // 再加残量网络上的源点到汇点的最大流
         printf("%d", ans);
     }

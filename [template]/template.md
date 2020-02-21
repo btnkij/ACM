@@ -5039,11 +5039,131 @@ int hlpp(int n, int src, int dst)
 
 
 
+#### 有源汇有上下界最大流
+
+【题号】LibreOJ116
+
+【题目】有源汇有上下界最大流模板题，网络的所有边有最小流量限制，求源点$src$到汇点$dst$的最大流量。
+
+【思路】
+
+* 建图方法：添加虚拟源点$isrc$、汇点$idst$，对于有下界的边$<from,to,lower,upper>$，分离成边$<from,idst,lower>,\ <isrc,to,lower>,\ <from,to,upper-lower>$三条只有上界的边。
+
+* 判断是否有解：分离出下界建图后，连边$e=<dst,src,+\infty>$，保证源汇点流量平衡。求$isrc$到$idst$的最大流，记流过$e$的流量为$f_1$，如果最大流等于所有下界流量之和，则存在可行解。
+* 求最大/最小流：删除虚拟源汇点和边$e$以及关联的边。如果求最大流，在残量网络上求$src$到$dst$的最大流，记为$f_2$，最终答案为$f_1+f_2$。如果求最小流，则在残量网络上求$dst$到$src$的最大流，记为$f_3$，最终答案为$f_1-f_3$。
+
+```c++
+const int MAXN = 400;
+const int MAXM = 10010;
+struct Edge // 链式前向星模板
+{
+    int from, to, flow, nxt;
+} edges[MAXM * 6]; // 注意开6倍
+int head[MAXN], edgeid;
+void addedge(int from, int to, int flow)
+{
+    edges[edgeid] = {from, to, flow, head[from]};
+    head[from] = edgeid++;
+}
+
+int isrc, idst; // isrc-虚拟源点 idst-虚拟汇点
+void addflow(int from, int to, int flow) // 连只有上界的边
+{
+    if (flow == 0) return;
+    addedge(from, to, flow);
+    addedge(to, from, 0);
+}
+void addflow(int from, int to, int lower, int upper) // 连有上下界的边
+{
+    addflow(from, to, upper - lower); // from到to连分离出来的流量
+    addflow(isrc, to, lower);         // 虚拟源点将下界流量送到to
+    addflow(from, idst, lower);       // from将下界流量送到虚拟汇点
+}
+
+int dep[MAXN], cur[MAXN]; // Dinic算法模板
+bool bfs(int n, int src, int dst)
+{
+    fill_n(dep, n + 1, 0), dep[src] = 1;
+    queue<int> Q; Q.push(src);
+    while (!Q.empty())
+    {
+        int u = Q.front(); Q.pop();
+        for (int i = head[u]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i];
+            if (e.to == 0) continue; // 跳过被删除的边
+            if (dep[e.to] || e.flow <= 0) continue;
+            dep[e.to] = dep[u] + 1;
+            Q.push(e.to);
+        }
+    }
+    return dep[dst] > 0;
+}
+int dfs(int u, int dst, int flow)
+{
+    if (u == dst) return flow;
+    for (int &i = cur[u]; ~i; i = edges[i].nxt)
+    {
+        Edge &e = edges[i];
+        if (e.to == 0) continue; // 跳过被删除的边
+        if (dep[e.to] != dep[u] + 1 || e.flow <= 0) continue;
+        int f = dfs(e.to, dst, min(flow, e.flow));
+        if (f)
+        {
+            e.flow -= f, edges[i ^ 1].flow += f;
+            return f;
+        }
+    }
+    return 0;
+}
+int dinic(int n, int src, int dst)
+{
+    int ans = 0, f;
+    while (bfs(n, src, dst))
+    {
+        copy(head, head + n + 1, cur);
+        while (f = dfs(src, dst, INF)) ans += f;
+    }
+    return ans;
+}
+
+int main()
+{
+    int n, m, src, dst; readi(n, m, src, dst); // src-源点 dst-汇点
+    isrc = n + 1, idst = isrc + 1; // 定义虚拟源汇点
+    clr(head, -1); // 链式前向星的初始化
+    int sum = 0;
+    repne(i, 0, m)
+    {
+        int u, v, lower, upper; readi(u, v, lower, upper);
+        addflow(u, v, lower, upper);
+        sum += lower; // 统计下界流量
+    }
+    int id = edgeid;
+    addflow(dst, src, INF); // 汇点向源点连容量为INF的边，并记录这条边的ID
+    if (dinic(n + 2, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
+    {
+        int ans = edges[id ^ 1].flow; // 答案先加上可行流
+        for (int i = head[isrc]; ~i; i = edges[i].nxt)
+            edges[i ^ 1].to = 0; // 注意在Dinic模板中跳过被删除的边，即to==0的边
+        for (int i = head[idst]; ~i; i = edges[i].nxt)
+            edges[i ^ 1].to = 0;
+        edges[id].to = edges[id ^ 1].to = 0; // 删除点isrc、点idst和边id
+        ans += dinic(n + 2, src, dst); // 再加残量网络上的源点到汇点的最大流
+        printf("%d", ans);
+    }
+    else puts("please go home to sleep"); // 无解
+    return 0;
+}
+```
+
+
+
 #### 最小费用最大流
 
 【题号】LUOGU3381
 
-【题目】最小费用最大流模板题，求源点到汇点的最小费用最大流
+【题目】最小费用最大流模板题，每条边按照流量计费，求源点到汇点的最大流和达到最大流的最小费用。
 
 ```c++
 const int MAXN = 5010;
@@ -5068,10 +5188,8 @@ int dis[MAXN], pre[MAXN]; // 最短路长度，最短路树
 bool vis[MAXN];
 bool spfa(int n, int src, int dst)
 {
-    fill_n(dis, n + 1, INF);
-    dis[src] = 0;
-    queue<int> Q;
-    Q.push(src);
+    fill_n(dis, n + 1, INF), dis[src] = 0;
+    queue<int> Q; Q.push(src);
     while (!Q.empty())
     {
         int u = Q.front(); Q.pop();
@@ -5080,8 +5198,7 @@ bool spfa(int n, int src, int dst)
         {
             Edge &e = edges[i];
             if (e.flow <= 0 || dis[u] + e.dis >= dis[e.to]) continue;
-            dis[e.to] = dis[u] + e.dis;
-            pre[e.to] = i;
+            dis[e.to] = dis[u] + e.dis, pre[e.to] = i;
             if (!vis[e.to])
             {
                 Q.push(e.to);
@@ -5095,7 +5212,7 @@ int maxflow, mincost; // 最大流，取得最大流的最小费用
 void mcmf(int n, int src, int dst) // 答案保存在maxflow和mincost中
 {
     maxflow = mincost = 0;
-    while (spfa(n, src, dst))
+    while (spfa(n, src, dst)) // 反复找最短路増广
     {
         int f = INF;
         for (int u = dst; u != src; u = edges[pre[u]].from)
@@ -5113,7 +5230,7 @@ void mcmf(int n, int src, int dst) // 答案保存在maxflow和mincost中
 int main()
 {
     int n, m, s, t; readi(n, m, s, t); // 点数，边数，源点，汇点
-    clr(head, -1);
+    clr(head, -1); // 链式前向星的初始化
     while (m--)
     {
         int u, v, w, f; readi(u, v, w, f); // 起点，终点，容量，费用
@@ -5121,303 +5238,6 @@ int main()
     }
     mcmf(n, s, t);
     printf("%d %d", maxflow, mincost);
-    return 0;
-}
-```
-
-
-
-#### 无源汇有上下界可行流（需再整理）
-
-【题号】LibreOJ115
-
-【题目】无源汇有上下界可行流模板题，求无源汇有上下界可行流，输出每条边的流量。
-
-```c++
-const int MAXN = 400;
-const int MAXM = 10210;
-struct Edge
-{
-    int from, to, flow, nxt;
-} edges[MAXM * 6]; // 注意开6倍
-int head[MAXN], edgeid;
-void addedge(int from, int to, int flow)
-{
-    edges[edgeid] = {from, to, flow, head[from]};
-    head[from] = edgeid++;
-}
-int isrc, idst; // isrc-虚拟源点 idst-虚拟汇点
-void addflow(int from, int to, int flow)
-{
-    // if (flow == 0) return; // 本题为找边方便没有加这个优化
-    addedge(from, to, flow);
-    addedge(to, from, 0);
-}
-void addflow(int from, int to, int lower, int upper)
-{
-    addflow(from, to, upper - lower); // from到to连分离出来的流量
-    addflow(isrc, to, lower); // 虚拟源点将下界流量送到to
-    addflow(from, idst, lower); // from将下界流量送到虚拟汇点
-}
-// 省略Dinic模板...
-int main()
-{
-    int n, m; readi(n, m); // n-节点数 m-边数
-    isrc = n + 1, idst = isrc + 1; // 定义虚拟源汇点
-    clr(head, -1), edgeid = 0; // 链式前向星的初始化
-    int sum = 0;
-    repne(i, 0, m)
-    {
-        int u, v, lower, upper;
-        readi(u, v, lower, upper);
-        addflow(u, v, lower, upper);
-        sum += lower; // 统计下界流量
-    }
-    if (dinic(idst, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
-    {
-        puts("YES");
-        for (int i = 0; i < edgeid; i += 6) // 可行流量=分离边的流量+下界流量
-        {
-            printf("%d\n", edges[i + 1].flow
-                 + edges[i + 2].flow + edges[i + 3].flow);
-        }
-    }
-    else puts("NO"); // 无解
-    return 0;
-}
-```
-
-
-
-#### 有源汇有上下界最大流
-
-【题号】LibreOJ116
-
-【题目】有源汇有上下界最大流模板题
-
-```c++
-const int MAXN = 400;
-const int MAXM = 10010;
-struct Edge
-{
-    int from, to, flow, nxt;
-} edges[MAXM * 6]; // 注意开6倍
-int head[MAXN], edgeid;
-void addedge(int from, int to, int flow)
-{
-    edges[edgeid] = {from, to, flow, head[from]};
-    head[from] = edgeid++;
-}
-
-int isrc, idst; // isrc-虚拟源点 idst-虚拟汇点
-void addflow(int from, int to, int flow)
-{
-    if (flow == 0) return;
-    addedge(from, to, flow);
-    addedge(to, from, 0);
-}
-void addflow(int from, int to, int lower, int upper)
-{
-    addflow(from, to, upper - lower); // from到to连分离出来的流量
-    addflow(isrc, to, lower);         // 虚拟源点将下界流量送到to
-    addflow(from, idst, lower);       // from将下界流量送到虚拟汇点
-}
-
-int dep[MAXN], cur[MAXN];
-bool bfs(int n, int src, int dst)
-{
-    fill_n(dep, n + 1, 0);
-    dep[src] = 1;
-    queue<int> Q;
-    Q.push(src);
-    while (!Q.empty())
-    {
-        int u = Q.front(); Q.pop();
-        for (int i = head[u]; ~i; i = edges[i].nxt)
-        {
-            Edge &e = edges[i];
-            if (e.to == 0) continue; // 跳过被删除的边
-            if (dep[e.to] || e.flow <= 0) continue;
-            dep[e.to] = dep[u] + 1;
-            Q.push(e.to);
-        }
-    }
-    return dep[dst] > 0;
-}
-int dfs(int u, int dst, int flow)
-{
-    if (u == dst)
-        return flow;
-    for (int &i = cur[u]; ~i; i = edges[i].nxt)
-    {
-        Edge &e = edges[i];
-        if (e.to == 0) continue; // 跳过被删除的边
-        if (dep[e.to] != dep[u] + 1 || e.flow <= 0) continue;
-        int f = dfs(e.to, dst, min(flow, e.flow));
-        if (f)
-        {
-            e.flow -= f, edges[i ^ 1].flow += f;
-            return f;
-        }
-    }
-    return 0;
-}
-int dinic(int n, int src, int dst)
-{
-    int ans = 0, f;
-    while (bfs(n, src, dst))
-    {
-        copy(head, head + n + 1, cur);
-        while (f = dfs(src, dst, INF))
-            ans += f;
-    }
-    return ans;
-}
-
-int main()
-{
-    int n, m, src, dst; readi(n, m, src, dst); // src-源点 dst-汇点
-    isrc = n + 1, idst = isrc + 1; // 定义虚拟源汇点
-    clr(head, -1); // 链式前向星的初始化
-    int sum = 0;
-    repne(i, 0, m)
-    {
-        int u, v, lower, upper;
-        readi(u, v, lower, upper);
-        addflow(u, v, lower, upper);
-        sum += lower; // 统计下界流量
-    }
-    int id = edgeid;
-    addflow(dst, src, INF); // 汇点向源点连容量为INF的边，并记录这条边的ID
-    if (dinic(idst, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
-    {
-        for (int i = head[isrc]; ~i; i = edges[i].nxt)
-            edges[i].to = 0;
-        for (int i = head[idst]; ~i; i = edges[i].nxt)
-            edges[i].to = 0;
-        edges[id].to = edges[id ^ 1].to = 0; // 删除点isrc、点idst和边id
-        int ans = edges[id ^ 1].flow;  // 答案先加上可行流
-        ans += dinic(n + 2, src, dst); // 再加残量网络上的源点到汇点的最大流
-        printf("%d", ans);
-    }
-    else puts("please go home to sleep"); // 无解
-    return 0;
-}
-```
-
-
-
-#### 有源汇有上下界最小流
-
-【题号】LibreOJ117
-
-【题目】有源汇有上下界最小流模板题
-
-```c++
-const int MAXN = 50010;
-const int MAXM = 125100;
-struct Edge
-{
-    int from, to, flow, nxt;
-} edges[MAXM * 6]; // 注意开6倍
-int head[MAXN], edgeid;
-void addedge(int from, int to, int flow)
-{
-    edges[edgeid] = {from, to, flow, head[from]};
-    head[from] = edgeid++;
-}
-
-int isrc, idst; // isrc-虚拟源点 idst-虚拟汇点
-void addflow(int from, int to, int flow)
-{
-    if (flow == 0)
-        return;
-    addedge(from, to, flow);
-    addedge(to, from, 0);
-}
-void addflow(int from, int to, int lower, int upper)
-{
-    addflow(from, to, upper - lower); // from到to连分离出来的流量
-    addflow(isrc, to, lower);         // 虚拟源点将下界流量送到to
-    addflow(from, idst, lower);       // from将下界流量送到虚拟汇点
-}
-
-int dep[MAXN], cur[MAXN];
-bool bfs(int n, int src, int dst)
-{
-    fill_n(dep, n + 1, 0);
-    dep[src] = 1;
-    queue<int> Q;
-    Q.push(src);
-    while (!Q.empty())
-    {
-        int u = Q.front(); Q.pop();
-        for (int i = head[u]; ~i; i = edges[i].nxt)
-        {
-            Edge &e = edges[i];
-            if (e.to == 0) continue;
-            if (dep[e.to] || e.flow <= 0) continue;
-            dep[e.to] = dep[u] + 1;
-            Q.push(e.to);
-        }
-    }
-    return dep[dst] > 0;
-}
-int dfs(int u, int dst, int flow)
-{
-    if (u == dst) return flow;
-    for (int &i = cur[u]; ~i; i = edges[i].nxt)
-    {
-        Edge &e = edges[i];
-        if (e.to == 0) continue;
-        if (dep[e.to] != dep[u] + 1 || e.flow <= 0) continue;
-        int f = dfs(e.to, dst, min(flow, e.flow));
-        if (f)
-        {
-            e.flow -= f, edges[i ^ 1].flow += f;
-            return f;
-        }
-    }
-    return 0;
-}
-int dinic(int n, int src, int dst)
-{
-    int ans = 0, f;
-    while (bfs(n, src, dst))
-    {
-        copy(head, head + n + 1, cur);
-        while (f = dfs(src, dst, INF)) ans += f;
-    }
-    return ans;
-}
-
-int main()
-{
-    int n, m, src, dst; readi(n, m, src, dst);
-    isrc = n + 1, idst = isrc + 1; // 定义虚拟源汇点
-    clr(head, -1); // 链式前向星的初始化
-    int sum = 0;
-    repne(i, 0, m)
-    {
-        int u, v, lower, upper;
-        readi(u, v, lower, upper);
-        addflow(u, v, lower, upper);
-        sum += lower; // 统计下界流量
-    }
-    int id = edgeid;
-    addflow(dst, src, INF);             // 汇点向源点连容量为INF的边，并记录这条边的ID
-    if (dinic(idst, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
-    {
-        for (int i = head[isrc]; ~i; i = edges[i].nxt)
-            edges[i].to = edges[i ^ 1].to = 0;
-        for (int i = head[idst]; ~i; i = edges[i].nxt)
-            edges[i].to = edges[i ^ 1].to = 0;
-        edges[id].to = edges[id ^ 1].to = 0;   // 删除点isrc、点idst和边id
-        int ans = edges[id ^ 1].flow;
-        ans -= dinic(idst, dst, src); // ans=可行流-汇点到源点的最大流
-        printf("%d", ans);
-    }
-    else puts("please go home to sleep"); // 无解
     return 0;
 }
 ```
