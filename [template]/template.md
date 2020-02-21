@@ -1,8 +1,8 @@
 [TOC]
 
-## 待整理
+## 不知道往哪放的好题
 
-技巧：树的括号序列表达 luogu2056
+树的括号序列表达 luogu2056
 
 
 
@@ -48,7 +48,7 @@ int main()
 
 
 
-### 输入输出优化（有符号整数）
+### 输入输出优化
 
 ```c++
 template <typename T>
@@ -166,6 +166,8 @@ void quick_sort(int* begin, int* end) // 传首尾指针，左闭右开区间
     quick_sort(lt + 1, end);
 }
 ```
+
+
 
 #### 归并排序
 
@@ -678,52 +680,6 @@ int main()
 
 ## 动态规划
 
-### 数位DP
-
-【题号】LiberOJ10167
-
-【题目】求[a, b]之间不含"4"和"62"的数的个数
-
-```c++
-vector<int> num; // 保存数字的每一位
-int dp[20][20];  // 记忆化
-int dfs(int dep, int pre, bool bound) // dep-当前填第几个数字 pre-前一个数字 lim-是否到达上界
-{
-    if (dep == -1) return 1;
-    if (!bound && dp[dep][pre] != -1)
-        return dp[dep][pre];
-    int lim = bound ? num[dep] : 9;
-    int ans = 0;
-    rep(i, 0, lim)
-    {
-        if (i == 4 || pre == 6 && i == 2) continue;
-        ans += dfs(dep - 1, i, bound && i == lim);
-    }
-    if (!bound)
-        dp[dep][pre] = ans;
-    return ans;
-}
-int query(int x)
-{
-    num.clear();
-    for (; x; x /= 10)
-        num.push_back(x % 10);
-    return dfs(num.size() - 1, 10, true);
-}
-int main()
-{
-    int a, b;
-    clr(dp, -1);
-    while (readi(a, b) != EOF && a && b)
-    {
-        printf("%d\n", query(b) - query(a - 1));
-    }
-    return 0;
-}
-```
-
-
-
 ### 树型依赖背包
 
 【题号】HDU1561
@@ -780,6 +736,56 @@ int main()
     return 0;
 }
 ```
+
+
+
+### 数位DP
+
+【题号】LiberOJ10167
+
+【题目】求[a, b]之间不含"4"和"62"的数的个数
+
+```c++
+vector<int> num; // 保存数字的每一位
+int dp[20][20];  // 记忆化
+int dfs(int dep, int pre, bool bound) // dep-当前填第几个数字 pre-前一个数字 lim-是否到达上界
+{
+    if (dep == -1) return 1;
+    if (!bound && dp[dep][pre] != -1)
+        return dp[dep][pre];
+    int lim = bound ? num[dep] : 9;
+    int ans = 0;
+    rep(i, 0, lim)
+    {
+        if (i == 4 || pre == 6 && i == 2) continue;
+        ans += dfs(dep - 1, i, bound && i == lim);
+    }
+    if (!bound)
+        dp[dep][pre] = ans;
+    return ans;
+}
+int query(int x)
+{
+    num.clear();
+    for (; x; x /= 10)
+        num.push_back(x % 10);
+    return dfs(num.size() - 1, 10, true);
+}
+int main()
+{
+    int a, b;
+    clr(dp, -1);
+    while (readi(a, b) != EOF && a && b)
+    {
+        printf("%d\n", query(b) - query(a - 1));
+    }
+    return 0;
+}
+```
+
+
+
+### 插头DP（待补充）
 
 
 
@@ -4002,6 +4008,10 @@ int main()
 
 
 
+#### 斯坦纳树（待补充）
+
+
+
 ### 连通分量 Tarjan
 
 #### 单连通分量
@@ -5246,7 +5256,7 @@ int main()
 
 ## 字符串
 
-### Hash
+### Hash（待整理）
 
 ```c++
 struct string_hash
@@ -5280,7 +5290,9 @@ struct string_hash
 };
 ```
 
-### KMP
+
+
+### KMP（待整理）
 
 ```c++
 struct kmp
@@ -5326,7 +5338,9 @@ struct kmp
 };
 ```
 
-### 扩展KMP
+
+
+### 扩展KMP（待整理）
 
 ```c++
 struct extend_kmp
@@ -5372,7 +5386,9 @@ struct extend_kmp
 };
 ```
 
-### Manacher
+
+
+### Manacher（待整理）
 
 ```c++
 struct manacher
@@ -5577,9 +5593,11 @@ int main()
 }
 ```
 
-## 数学
 
-### 高斯消元
+
+## 数学（待补充）
+
+### 高斯消元（待整理）
 
 ```c++
 const int MAXN = 104;
@@ -5633,7 +5651,7 @@ struct gauss_elimination
 
 
 
-## 计算几何（未完整测试，不保证正确性）
+## 计算几何（待整理）
 
 ### 通用
 
