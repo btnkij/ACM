@@ -85,11 +85,58 @@ inline void writeln(T x)
 
 
 
-### 预编译指令优化
+### 编译器优化指令
 
 ```c++
-#pragma comment(linker, "/STACK:102400000,102400000")
-#pragma GCC optimize ("O2")
+#pragma comment(linker, "/STACK:102400000,102400000") // 扩栈
+#pragma GCC optimize(2)
+#pragma GCC optimize(3)
+#pragma GCC optimize("Ofast")
+#pragma GCC optimize("Ofast")
+#pragma GCC optimize("inline")
+#pragma GCC optimize("-fgcse")
+#pragma GCC optimize("-fgcse-lm")
+#pragma GCC optimize("-fipa-sra")
+#pragma GCC optimize("-ftree-pre")
+#pragma GCC optimize("-ftree-vrp")
+#pragma GCC optimize("-fpeephole2")
+#pragma GCC optimize("-ffast-math")
+#pragma GCC optimize("-fsched-spec")
+#pragma GCC optimize("unroll-loops")
+#pragma GCC optimize("-falign-jumps")
+#pragma GCC optimize("-falign-loops")
+#pragma GCC optimize("-falign-labels")
+#pragma GCC optimize("-fdevirtualize")
+#pragma GCC optimize("-fcaller-saves")
+#pragma GCC optimize("-fcrossjumping")
+#pragma GCC optimize("-fthread-jumps")
+#pragma GCC optimize("-funroll-loops")
+#pragma GCC optimize("-fwhole-program")
+#pragma GCC optimize("-freorder-blocks")
+#pragma GCC optimize("-fschedule-insns")
+#pragma GCC optimize("inline-functions")
+#pragma GCC optimize("-ftree-tail-merge")
+#pragma GCC optimize("-fschedule-insns2")
+#pragma GCC optimize("-fstrict-aliasing")
+#pragma GCC optimize("-fstrict-overflow")
+#pragma GCC optimize("-falign-functions")
+#pragma GCC optimize("-fcse-skip-blocks")
+#pragma GCC optimize("-fcse-follow-jumps")
+#pragma GCC optimize("-fsched-interblock")
+#pragma GCC optimize("-fpartial-inlining")
+#pragma GCC optimize("no-stack-protector")
+#pragma GCC optimize("-freorder-functions")
+#pragma GCC optimize("-findirect-inlining")
+#pragma GCC optimize("-fhoist-adjacent-loads")
+#pragma GCC optimize("-frerun-cse-after-loop")
+#pragma GCC optimize("inline-small-functions")
+#pragma GCC optimize("-finline-small-functions")
+#pragma GCC optimize("-ftree-switch-conversion")
+#pragma GCC optimize("-foptimize-sibling-calls")
+#pragma GCC optimize("-fexpensive-optimizations")
+#pragma GCC optimize("-funsafe-loop-optimizations")
+#pragma GCC optimize("inline-functions-called-once")
+#pragma GCC optimize("-fdelete-null-pointer-checks")
 ```
 
 
@@ -3883,7 +3930,7 @@ int main()
 
 
 
-#### 最小树形图
+#### 最小树形图 朱-刘算法
 
 【题号】LUOGU4716
 
@@ -4816,8 +4863,9 @@ int main()
         int a, b, f; readi(a, b, f); // 起点，终点，容量
         addflow(a, b, f);
     }
-    printf("%d\n", dinic(n, s, t));
-    // printf("%d\n", isap(n, s, t)); // 算法模板见下面，调用方式与Dinic一致
+    printf("%d\n", dinic(n, s, t));   // Dinic算法
+    // printf("%d\n", isap(n, s, t)); // ISAP算法，见下面
+    // printf("%d\n", hlpp(n, s, t)); // HLPP算法，见下面
     return 0;
 }
 ```
@@ -4903,6 +4951,89 @@ int isap(int n, int src, int dst)
         }
     }
     return ans; // 返回最大流的值
+}
+```
+
+
+
+#### 最大流 HLPP
+
+```c++
+// LUOGU3376 HLPP解法，main函数同Dinic解法，见上
+int h[MAXN], w[MAXN], gap[MAXN * 2]; // h[]-标号 w[]-贮存流量 gap[]-统计每种标号的数量
+bool vis[MAXN]; // 是否在优先队列P中
+queue<int> Q;
+priority_queue<pair<int, int>> P; // first-标号 second-节点编号
+inline bool bfs(int n, int src, int dst)
+{
+    fill_n(h, n + 1, INF), h[dst] = 0;
+    Q.push(dst);
+    while (!Q.empty())
+    {
+        int u = Q.front(); Q.pop();
+        for (int i = head[u]; ~i; i = edges[i].nxt)
+        {
+            Edge &e = edges[i ^ 1];
+            if (e.flow > 0 && h[e.from] == INF)
+            {
+                h[e.from] = h[u] + 1;
+                Q.push(e.from);
+            }
+        }
+    }
+    h[src] = max(h[src], n); // 源点的标号设为n
+    return h[src] != INF;    // 残量网络是否连通
+}
+inline void relabel(int u) // 重新标号
+{
+    int tmp = INF;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+        if (edges[i].flow > 0)
+            tmp = min(tmp, h[edges[i].to]);
+    h[u] = tmp + 1;
+}
+inline void discharge(int u, int src) // 推流
+{
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        Edge &e = edges[i];
+        if (e.flow == 0 || u != src && h[u] != h[e.to] + 1) continue;
+        int f = e.flow;
+        if (u != src && w[u] < f) f = w[u]; // 源点流量为无穷大，需特殊处理
+        e.flow -= f, edges[i ^ 1].flow += f;
+        w[u] -= f, w[e.to] += f;
+        if (!vis[e.to])
+        {
+            P.emplace(h[e.to], e.to);
+            vis[e.to] = true;
+        }
+        if (u != src && w[u] == 0) break;
+    }
+}
+int hlpp(int n, int src, int dst)
+{
+    if (!bfs(n, src, dst)) return 0; // 标号优化：初始标号设置为到汇点的距离
+    fill_n(gap, 2 * n, 0); // GAP优化
+    for (int i = 1; i <= n; i++) if (h[i] != INF) ++gap[h[i]];
+    vis[src] = vis[dst] = true;
+    discharge(src, src);
+    while (!P.empty())
+    {
+        int u = P.top().second; P.pop();
+        vis[u] = false;
+        discharge(u, src);
+        if (w[u] > 0)
+        {
+            if (--gap[h[u]] == 0)
+                for (int i = 1; i <= n; i++)
+                    if (i != src && i != dst && h[i] > h[u] && h[i] < n + 1)
+                        h[i] = n + 1;
+            relabel(u); ++gap[h[u]];
+            P.emplace(h[u], u);
+            vis[u] = true;
+        }
+    }
+    return w[dst]; // 返回最大流
 }
 ```
 

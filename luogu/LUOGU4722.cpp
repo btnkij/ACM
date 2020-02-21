@@ -7,193 +7,132 @@
 
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 #include <queue>
-#include <stack>
+#include <cassert>
 using namespace std;
 
 #define INF 0x3f3f3f3f
-#define PI acos(-1)
 typedef long long ll;
+typedef unsigned long long ull;
 
-#define readi(i1) scanf("%d", &i1)
-#define readi2(i1, i2) scanf("%d %d", &i1, &i2)
-#define readi3(i1, i2, i3) scanf("%d %d %d", &i1, &i2, &i3)
-#define readi4(i1, i2, i3, i4) scanf("%d %d %d %d", &i1, &i2, &i3, &i4)
-#define reads(s1) scanf("%s", s1)
-#define mset(mem, val) memset(mem, val, sizeof(mem))
-#define rep(i, begin, end) for (int i = (begin); i <= (end); i++)
+inline int readi(int &i1) { return scanf("%d", &i1); }
+inline int readi(int &i1, int &i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int &i1, int &i2, int &i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int &i1, int &i2, int &i3, int &i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char *s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
+#define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
 #define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
-#define repne(i, begin, end) for (int i = (begin); i < (end); i++)
+#define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-struct directed_graph
+const int MAXN = 1210;
+const int MAXM = 120010;
+struct Edge
 {
-    struct edge
-    {
-        int from, to;
-        ll weight;
-        bool operator<(const edge &rhs) const
-        {
-            return weight < rhs.weight;
-        }
-    } edges[240010];
-    int nxt[240010];
-    int head[1210];
-    int n_node; // 顶点数
-    int n_edge; // 边数
-    void clear(int n_node)
-    {
-        this->n_node = n_node;
-        this->n_edge = 0;
-        memset(head + 1, -1, sizeof(int) * n_node);
-    }
-    void add_edge(int from, int to, ll weight)
-    {
-        edge &e = edges[n_edge];
-        e.from = from;
-        e.to = to;
-        e.weight = weight;
-        nxt[n_edge] = head[from];
-        head[from] = n_edge++;
-    }
-} G;
+    int from, to, flow, nxt; // 起点，终点，容量
+} edges[MAXM * 2];
+int head[MAXN], edgeid;
+void addedge(int from, int to, int flow)
+{
+    edges[edgeid] = (Edge){from, to, flow, head[from]};
+    head[from] = edgeid++;
+}
+void addflow(int from, int to, int flow)
+{
+    addedge(from, to, flow);
+    addedge(to, from, 0);
+}
 
-struct hlpp
+int h[MAXN], w[MAXN], gap[MAXN * 2];
+bool vis[MAXN];
+queue<int> Q;
+priority_queue<pair<int, int>> P; // first-标号 second-节点编号
+inline bool bfs(int n, int src, int dst)
 {
-    struct Node
+    fill_n(h, n + 1, INF), h[dst] = 0;
+    Q.push(dst);
+    while (!Q.empty())
     {
-        int id, height;
-        ll flow;
-    } nodes[1210];
-    struct Comparer
-    {
-        bool operator()(const Node *lhs, const Node *rhs)
+        int u = Q.front();
+        Q.pop();
+        for (int i = head[u]; ~i; i = edges[i].nxt)
         {
-            return lhs->height < rhs->height;
-        }
-    };
-    int src, dst;
-    directed_graph *G;
-    int num[1210 << 1];
-    bool vis[1210];
-    priority_queue<Node *, vector<Node *>, Comparer> P;
-    void add_edge(int from, int to, ll capacity)
-    {
-        if (capacity <= 0)
-            return;
-        G->add_edge(from, to, capacity);
-        G->add_edge(to, from, 0);
-    }
-    bool bfs()
-    {
-        queue<int> Q;
-        for (int i = 1; i <= G->n_node; i++)
-        {
-            nodes[i].id = i;
-            nodes[i].flow = 0;
-            nodes[i].height = INF;
-        }
-        nodes[dst].height = 0;
-        Q.push(dst);
-        while (!Q.empty())
-        {
-            int u = Q.front();
-            Q.pop();
-            int h = nodes[u].height + 1;
-            for (int i = G->head[u]; ~i; i = G->nxt[i])
+            Edge &e = edges[i ^ 1];
+            if (e.flow > 0 && h[e.from] == INF)
             {
-                directed_graph::edge &e = G->edges[i ^ 1];
-                if (nodes[e.from].height != INF || e.weight <= 0)
-                    continue;
-                nodes[e.from].height = h;
+                h[e.from] = h[u] + 1;
                 Q.push(e.from);
             }
         }
-        if (nodes[src].height == INF)
-            return false;
-        nodes[src].height = G->n_node;
-        return true;
     }
-    void discharge(int id)
+    h[src] = max(h[src], n); // 源点的标号设为n
+    return h[src] != INF; // 残量网络是否连通
+}
+inline void relabel(int u) // 重新标号
+{
+    int tmp = INF;
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+        if (edges[i].flow > 0)
+            tmp = min(tmp, h[edges[i].to]);
+    h[u] = tmp + 1;
+}
+inline void discharge(int u, int src) // 推流
+{
+    for (int i = head[u]; ~i; i = edges[i].nxt)
     {
-        for (int i = G->head[id]; ~i; i = G->nxt[i])
+        Edge &e = edges[i];
+        if (e.flow == 0 || u != src && h[u] != h[e.to] + 1)
+            continue;
+        int f = e.flow;
+        if (u != src && w[u] < f) // 源点流量为无穷大，需特殊处理
+            f = w[u];
+        e.flow -= f, edges[i ^ 1].flow += f;
+        w[u] -= f, w[e.to] += f;
+        if (!vis[e.to])
         {
-            directed_graph::edge &e = G->edges[i];
-            if (e.weight <= 0 || id != src && nodes[id].height != nodes[e.to].height + 1)
-                continue;
-            ll f = e.weight;
-            if (id != src && f > nodes[id].flow)
-                f = nodes[id].flow;
-            e.weight -= f;
-            G->edges[i ^ 1].weight += f;
-            nodes[id].flow -= f;
-            nodes[e.to].flow += f;
-            if (!vis[e.to])
-            {
-                P.push(&nodes[e.to]);
-                vis[e.to] = true;
-            }
-            if (id != src && nodes[id].flow <= 0)
-                break;
+            P.emplace(h[e.to], e.to);
+            vis[e.to] = true;
+        }
+        if (u != src && w[u] == 0)
+            break;
+    }
+}
+int hlpp(int n, int src, int dst)
+{
+    if (!bfs(n, src, dst)) // 标号优化：初始标号设置为到汇点的距离
+        return 0;
+    fill_n(gap, 2 * n, 0); // GAP优化
+    for (int i = 1; i <= n; i++)
+        if (h[i] != INF)
+            ++gap[h[i]];
+    vis[src] = vis[dst] = true;
+    discharge(src, src);
+    while (!P.empty())
+    {
+        int u = P.top().second;
+        P.pop();
+        vis[u] = false;
+        discharge(u, src);
+        if (w[u] > 0)
+        {
+            if (--gap[h[u]] == 0)
+                for (int i = 1; i <= n; i++)
+                    if (i != src && i != dst && h[i] > h[u] && h[i] < n + 1)
+                        h[i] = n + 1;
+            relabel(u);
+            ++gap[h[u]];
+            P.emplace(h[u], u);
+            vis[u] = true;
         }
     }
-    void relabel(int id)
-    {
-        int h = INF;
-        for (int i = G->head[id]; ~i; i = G->nxt[i])
-            if (G->edges[i].weight > 0)
-            {
-                h = min(h, nodes[G->edges[i].to].height);
-            }
-        nodes[id].height = h + 1;
-    }
-    ll operator()(int src, int dst)
-    {
-        this->src = src;
-        this->dst = dst;
-        if (!bfs())
-            return 0;
-        memset(vis + 1, false, sizeof(bool) * G->n_node);
-        vis[src] = vis[dst] = true;
-        memset(num, 0, sizeof(int) * (G->n_node << 1));
-        for (int i = 1; i <= G->n_node; i++)
-            if (nodes[i].height < INF)
-                num[nodes[i].height]++;
-        P = priority_queue<Node *, vector<Node *>, Comparer>();
-        discharge(src);
-        while (!P.empty())
-        {
-            Node *node = P.top();
-            P.pop();
-            vis[node->id] = false;
-            discharge(node->id);
-            if (node->flow > 0)
-            {
-                if (--num[node->height] == 0)
-                {
-                    for (int i = 1; i <= G->n_node; i++)
-                    {
-                        if (i == src || i == dst)
-                            continue;
-                        if (nodes[i].height >= node->height && nodes[i].height < G->n_node + 1)
-                        {
-                            nodes[i].height = G->n_node + 1;
-                        }
-                    }
-                }
-                relabel(node->id);
-                num[node->height]++;
-                P.push(node);
-                vis[node->id] = true;
-            }
-        }
-        return nodes[dst].flow;
-    }
-} solver;
+    return w[dst]; // 返回最大流
+}
 
 int main()
 {
@@ -202,17 +141,14 @@ int main()
     freopen("out.txt", "w", stdout);
 #endif
     int n, m, s, t;
-    readi4(n, m, s, t);
-    G.clear(n);
-    solver.G = &G;
+    readi(n, m, s, t); // 点数，边数，源点，汇点
+    clr(head, -1);
     while (m--)
     {
-        int a, b;
-        ll f;
-        readi2(a, b);
-        scanf("%lld", &f);
-        solver.add_edge(a, b, f);
+        int a, b, f;
+        readi(a, b, f); // 起点，终点，容量
+        addflow(a, b, f);
     }
-    printf("%lld\n", solver(s, t));
+    printf("%d\n", hlpp(n, s, t));
     return 0;
 }
