@@ -134,16 +134,16 @@ int main()
         sum += lower; // 统计下界流量
     }
     int id = edgeid;
-    addflow(dst, src, INF);             // 汇点向源点连容量为INF的边，并记录这条边的ID
-    if (dinic(idst, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
+    addflow(dst, src, INF);              // 汇点向源点连容量为INF的边，并记录这条边的ID
+    if (dinic(n + 2, isrc, idst) == sum) // 如果虚拟源汇的流量能流满，则有可行解
     {
         int ans = edges[id ^ 1].flow;
         for (int i = head[isrc]; ~i; i = edges[i].nxt)
             edges[i ^ 1].to = 0;
         for (int i = head[idst]; ~i; i = edges[i].nxt)
             edges[i ^ 1].to = 0;
-        edges[id].to = edges[id ^ 1].to = 0;   // 删除点isrc、点idst和边id
-        ans -= dinic(idst, dst, src); // ans=可行流-汇点到源点的最大流
+        edges[id].to = edges[id ^ 1].to = 0; // 删除点isrc、点idst和边id
+        ans -= dinic(n + 2, dst, src);       // ans=可行流-汇点到源点的最大流
         printf("%d", ans);
     }
     else
