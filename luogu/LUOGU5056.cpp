@@ -7,48 +7,34 @@
 
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
 #include <cstring>
-#include <queue>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <vector>
 #include <unordered_map>
 using namespace std;
 
 #define INF 0x3f3f3f3f
-#define PI acos(-1)
 typedef long long ll;
 typedef unsigned long long ull;
 
-inline int readi(int& i1) { return scanf("%d", &i1); }
-inline int readi(int& i1, int& i2) { return scanf("%d %d", &i1, &i2); }
-inline int readi(int& i1, int& i2, int& i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
-inline int readi(int& i1, int& i2, int& i3, int& i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
-inline int reads(char* s1) { return scanf("%s", s1); }
-#define mset(mem, val) memset(mem, val, sizeof(mem))
+inline int readi(int &i1) { return scanf("%d", &i1); }
+inline int readi(int &i1, int &i2) { return scanf("%d %d", &i1, &i2); }
+inline int readi(int &i1, int &i2, int &i3) { return scanf("%d %d %d", &i1, &i2, &i3); }
+inline int readi(int &i1, int &i2, int &i3, int &i4) { return scanf("%d %d %d %d", &i1, &i2, &i3, &i4); }
+inline int reads(char *s1) { return scanf("%s", s1); }
+#define clr(mem, val) memset(mem, val, sizeof(mem))
 #define rep(i, begin, end) for (register int i = (begin); i <= (end); i++)
 #define rep2(i1, begin1, end1, i2, begin2, end2) rep(i1, begin1, end1) rep(i2, begin2, end2)
 #define repne(i, begin, end) for (register int i = (begin); i < (end); i++)
 #define repne2(i1, begin1, end1, i2, begin2, end2) repne(i1, begin1, end1) repne(i2, begin2, end2)
 
-unordered_map<unsigned,int> M;
-struct Node
+char maze[15][15];
+unordered_map<int, ll> pre, cur;
+inline int getbits(int sta, int j)
 {
-    unsigned state;
-    ll value;
-}Q[2][2<<24];
-int cnt[2];
-unsigned one[20];
-char mat[20][20];
-int pre,cur;
-void dp(unsigned sta, ll val)
-{
-    auto it=M.find(sta);
-    if(it==M.end())
-    {
-        M[sta]=cnt[cur];
-        Q[cur][cnt[cur]++]=(Node){sta,val};
-        return;
-    }
-    Q[cur][it->second].value+=val;
+    return (sta >> (j << 1)) & 3;
 }
 int main()
 {
@@ -56,95 +42,67 @@ int main()
     freopen("in.txt", "r", stdin);
     freopen("out.txt", "w", stdout);
 #endif
-    int n,m; scanf("%d %d",&n,&m);
-    int lastx,lasty;
-    for(int i=0;i<n;i++)
+    int n, m;
+    readi(n, m);
+    int lastx, lasty;
+    repne(i, 0, n)
     {
-        scanf("%s",mat[i]);
-        for(int j=0;j<m;j++)
-            if(mat[i][j]=='.')
-                lastx=i, lasty=j;
+        reads(maze[i]);
+        repne(j, 0, m) if (maze[i][j] == '.') lastx = i, lasty = j;
     }
-    one[0]=0x1;
-    for(int j=1;j<16;j++)
-        one[j]=one[j-1]<<2;
-    ll ans=0;
-    pre=0,cur=1;
-    Q[0][0]=(Node){0,1}; cnt[0]=1;
-    for(int i=0;i<n;i++)
+    ll ans = 0;
+    cur[0] = 1;
+    repne2(i, 0, n, j, 0, m)
     {
-        for(int j=0;j<cnt[pre];j++)
-            Q[pre][j].state<<=2;
-        for(int j=0;j<m;j++)
+        if (j == 0)
         {
-            M.clear(); cnt[cur]=0;
-            for(int k=0;k<cnt[pre];k++)
+            pre.clear();
+            for (const auto &it : cur)
+                pre[it.first << 2] = it.second;
+        }
+        else
+            swap(pre, cur);
+        cur.clear();
+        for (auto it : pre)
+        {
+            int sta = it.first;
+            ll cnt = it.second;
+            int left = getbits(sta, j), up = getbits(sta, j + 1);
+            if (maze[i][j] != '.')
+                cur[sta] += cnt;
+            else if (!left && !up)
             {
-                unsigned sta=Q[pre][k].state;
-                ll val=Q[pre][k].value;
-                int left=(sta>>(j<<1))&0x3, down=(sta>>((j+1)<<1))&0x3;
-                if(mat[i][j]!='.')
-                {
-                    if(!left && !down)
-                        dp(sta,val);
-                }
-                else if(!left && !down)
-                {
-                    if(mat[i+1][j]=='.' && mat[i][j+1]=='.')
-                        dp(sta+one[j]+one[j+1]*2,val);
-                }
-                else if(!left && down)
-                {
-                    if(mat[i+1][j]=='.')dp(sta-one[j+1]*down+one[j]*down,val);
-                    if(mat[i][j+1]=='.')dp(sta,val);
-                }
-                else if(left && !down)
-                {
-                    if(mat[i+1][j]=='.')dp(sta,val);
-                    if(mat[i][j+1]=='.')dp(sta-one[j]*left+one[j+1]*left,val);
-                }
-                else if(left==1 && down==1)
-                {
-                    int nested=1;
-                    for(int p=j+2;p<=m;p++)
-                    {
-                        unsigned b=(sta>>(p<<1))&0x3;
-                        if(b==1)nested++;
-                        else if(b==2)nested--;
-                        if(!nested)
-                        {
-                            dp(sta-one[j]-one[j+1]-one[p],val);
-                            break;
-                        }
-                    }
-                }
-                else if(left==2 && down==2)
-                {
-                    int nested=1;
-                    for(int p=j-1;p>=0;p--)
-                    {
-                        unsigned b=(sta>>(p<<1))&0x3;
-                        if(b==1)nested--;
-                        else if(b==2)nested++;
-                        if(!nested)
-                        {
-                            dp(sta-one[j]*2-one[j+1]*2+one[p],val);
-                            break;
-                        }
-                    }
-                }
-                else if(left==2 && down==1)
-                {
-                    dp(sta-one[j]*2-one[j+1],val);
-                }
-                else if(i==lastx && j==lasty)
-                {
-                    ans+=val;
-                }
+                if (maze[i][j + 1] == '.' && maze[i + 1][j] == '.')
+                    cur[sta | (0b1001 << j * 2)] += cnt;
             }
-            swap(pre,cur);
+            else if (!left || !up)
+            {
+                if (maze[i + !up][j + !left] == '.')
+                    cur[sta] += cnt;
+                if (maze[i + !left][j + !up] == '.')
+                    cur[sta & ~(15 << j * 2) | (left << (j + 1) * 2) | (up << j * 2)] += cnt;
+            }
+            else if (left == up)
+            {
+                int dir = left == 1 ? 1 : -1;
+                int nested = 1, k = dir == 1 ? j + 2 : j - 1;
+                for (; nested; k += dir)
+                {
+                    int b = getbits(sta, k);
+                    if (b == left)
+                        nested++;
+                    else if (b != 0)
+                        nested--;
+                }
+                k -= dir;
+                cur[sta & ~(15 << j * 2) ^ (3 << k * 2)] += cnt;
+            }
+            else if (left == 2 && up == 1)
+                cur[sta & ~(15 << j * 2)] += cnt;
+            else if (i == lastx && j == lasty)
+                ans += cnt;
         }
     }
-    printf("%lld",ans);
+    printf("%lld", ans);
     return 0;
 }

@@ -785,7 +785,82 @@ int main()
 
 
 
-### 插头DP（待补充）
+### 插头DP
+
+【题号】LUOGU5156
+
+【题目】一个矩阵，“.“表示空地，“*”表示障碍。作一条回路经过所有空地，求方案数。
+
+```c++
+char maze[15][15]; // 矩阵
+unordered_map<int, ll> pre, cur; // 滚动数组优化，使用哈希表转移可以避开无效状态
+inline int getbits(int sta, int j) // 获取括号序列的第j位
+{
+    return (sta >> (j << 1)) & 3;
+}
+int main()
+{
+    int n, m; readi(n, m); // n-行数 m-列数
+    int lastx, lasty; // 记录最后一个空地的位置
+    repne(i, 0, n)
+    {
+        reads(maze[i]);
+        repne(j, 0, m) if (maze[i][j] == '.') lastx = i, lasty = j;
+    }
+    ll ans = 0;
+    cur[0] = 1;
+    repne2(i, 0, n, j, 0, m) // 插头DP
+    {
+        if (j == 0) // 新的一行开始时，pre的括号序列最低位补0
+        {
+            pre.clear();
+            for (const auto &it : cur)
+                pre[it.first << 2] = it.second;
+        }
+        else swap(pre, cur); // 滚动数组优化
+        cur.clear();
+        for (auto it : pre) // first-括号序列 second-情况数
+        {
+            int sta = it.first; // 用二进制串表示括号序列 00-空 01-( 10-)
+            ll cnt = it.second;
+            int left = getbits(sta, j), up = getbits(sta, j + 1);
+            if (maze[i][j] != '.') // 当前方格是障碍物
+                cur[sta] += cnt;
+            else if (!left && !up) // 当前方格没有进入插头
+            {
+                if (maze[i][j + 1] == '.' && maze[i + 1][j] == '.')
+                    cur[sta | (0b1001 << j * 2)] += cnt;
+            }
+            else if (!left || !up) // 当前方格只有一个进入插头
+            {
+                if (maze[i + !up][j + !left] == '.')
+                    cur[sta] += cnt;
+                if (maze[i + !left][j + !up] == '.')
+                    cur[sta & ~(15<<j*2) | (left<<(j+1)*2) | (up<<j*2)] += cnt;
+            }
+            else if (left == up) // 连通两个分量
+            {
+                int dir = left == 1 ? 1 : -1;
+                int nested = 1, k = dir == 1 ? j + 2 : j - 1;
+                for (; nested; k += dir) // 使与left,up匹配的两个括号匹配
+                {
+                    int b = getbits(sta, k);
+                    if (b == left) nested++;
+                    else if (b != 0) nested--;
+                }
+                k -= dir;
+                cur[sta & ~(15 << j * 2) ^ (3 << k * 2)] += cnt;
+            }
+            else if (left == 2 && up == 1) // 连通两个分量，直接消去这对括号
+                cur[sta & ~(15 << j * 2)] += cnt;
+            else if (i == lastx && j == lasty) // 闭合回路
+                ans += cnt;
+        }
+    }
+    printf("%lld", ans);
+    return 0;
+}
+```
 
 
 
@@ -3626,8 +3701,7 @@ int findr(int x) // 查询x所在树的根节点
 bool merge(int x, int y, int r) // 合并x和y，它们的关系为r
 {
     int rx = findr(x), ry = findr(y);
-    if (rx == ry)
-        return (rel[x] ^ rel[y]) == r;
+    if (rx == ry) return (rel[x] ^ rel[y]) == r;
     rel[rx] = rel[x] ^ rel[y] ^ r;
     fa[rx] = ry;
     return true;
