@@ -2661,67 +2661,6 @@ int main()
 
 
 
-### 字典树 Trie（待整理）
-
-```c++
-struct Trie
-{
-    struct Node
-    {
-        int count; // 当前节点是多少个单词的结尾
-        Node* nxt[26];
-    }nodes[100010];
-    int sz; // 节点总数
-    Node* root; // 根节点
-    Node* createNode()
-    {
-        Node* nod = &nodes[sz++];
-        memset(nod, 0, sizeof(Node));
-        return nod;
-    }
-    void init() // 初始化，清空字典树
-    {
-        sz = 0;
-        root = createNode();
-    }
-    inline int id(char ch) // 字符映射到边
-    {
-        return ch - 'a';
-    }
-    int insert(const char* s) // 插入单词
-    {
-        Node* nod = root;
-        const char* p = s;
-        while(*p)
-        {
-            int v = id(*p);
-            if(!nod->nxt[v])
-            {
-                nod->nxt[v] = createNode();
-            }
-            nod = nod->nxt[v];
-            p++;
-        }
-        return nod->count++;
-    }
-    int find(const char* s) // 查找单词，返回出现次数
-    {
-        Node* nod = root;
-        const char* p = s;
-        while(*p)
-        {
-            int v = id(*p);
-            if(!nod->nxt[v])return 0;
-            nod = nod->nxt[v];
-            p++;
-        }
-        return nod->count;
-    }
-};
-```
-
-
-
 ## 树
 
 ### DSU-On-Tree
@@ -5434,7 +5373,7 @@ int main()
 
 ## 字符串
 
-### Hash（待整理）
+### 字符串Hash
 
 ```c++
 struct string_hash
@@ -5455,14 +5394,11 @@ struct string_hash
     {
         return hashc[rt] - hashc[lt - 1] * powb[rt - lt + 1];
     }
-    ull concat(int lt1, int rt1, int lt2, int rt2) //s[lt1:rt1] + s[lt2:rt2]的哈希值
+    ull concat(int lt1, int rt1, int lt2, int rt2) // s[lt1:rt1] + s[lt2:rt2]的哈希值
     {
-        if (lt1 > rt1 && lt2 > rt2)
-            return 0ULL;
-        if (lt1 > rt1)
-            return substr(lt2, rt2);
-        if (lt2 > rt2)
-            return substr(lt1, rt1);
+        if (lt1 > rt1 && lt2 > rt2) return 0ULL;
+        if (lt1 > rt1) return substr(lt2, rt2);
+        if (lt2 > rt2) return substr(lt1, rt1);
         return substr(lt1, rt1) * powb[rt2 - lt2 + 1] + substr(lt2, rt2);
     }
 };
@@ -5603,6 +5539,59 @@ struct manacher
         }
     }
 };
+```
+
+
+
+### 字典树 Trie
+
+【题号】HDU1251
+
+【题目】求具有给定前缀的单词的个数。
+
+```c++
+struct Node
+{
+    int cnt, son[26]; // cnt-统计当前前缀数量
+} trie[5010 * 26 * 20]; // 单词数*字母数*单词长度
+int sz;
+int makenode()
+{
+    memset(&trie[++sz], 0, sizeof(Node));
+    return sz;
+}
+void insert(const char *s)
+{
+    int u = 0;
+    for (const char *p = s; *p; p++)
+    {
+        int &v = trie[u].son[*p - 'a'];
+        if (!v) v = makenode();
+        trie[v].cnt++;
+        u = v;
+    }
+}
+int query(const char *s)
+{
+    int u = 0;
+    for (const char *p = s;; p++)
+    {
+        if (!*p) return trie[u].cnt; // 匹配到结尾
+        u = trie[u].son[*p - 'a'];
+        if (!u) return 0; // 失配
+    }
+}
+
+char s[20];
+int main()
+{
+    sz = 0; // Trie的初始化
+    while (gets(s), s[0])
+        insert(s); // 插入单词
+    while (reads(s) != EOF)
+        printf("%d\n", query(s)); // 查询以s为前缀的单词的数量
+    return 0;
+}
 ```
 
 
