@@ -1,8 +1,8 @@
 /**
 * Number:hdu1251
 * Title:统计难题
-* Status:?
-* Tag:[]
+* Status:AC
+* Tag:[trie, 字典树]
 **/
 
 #include <cstdio>
