@@ -5553,9 +5553,9 @@ struct manacher
 struct Node
 {
     int cnt, son[26]; // cnt-统计当前前缀数量
-} trie[5010 * 26 * 20]; // 单词数*字母数*单词长度
+} trie[25100 * 20]; // 数组大小=字符串长度总和
 int sz;
-int makenode()
+inline int makenode()
 {
     memset(&trie[++sz], 0, sizeof(Node));
     return sz;
@@ -5596,7 +5596,116 @@ int main()
 
 
 
-### AC自动机（待补充）
+### AC自动机
+
+【题号】LUOGU5357
+
+【题目】求多个模式串在一个文本串中出现的次数。
+
+```c++
+const int MAXN = 2e5 + 10;
+struct Edge // 链式前向星模板，用于保存AC自动机的fail树
+{
+    int from, to, nxt;
+} edges[MAXN];
+int head[MAXN], edgeid;
+void addedge(int from, int to)
+{
+    edges[edgeid] = {from, to, head[from]};
+    head[from] = edgeid++;
+}
+
+struct Node // AC自动机的节点，相当于Trie树节点多了fail指针
+{
+    int fail, nxt[26]; // AC自动机的必要信息：fail-失配链接 nxt[]-指向儿子或fail
+    int cnt;           // 当前子串匹配的次数
+} ac[MAXN];
+int sz;
+inline int makenode()
+{
+    memset(&ac[++sz], 0, sizeof(Node));
+    return sz;
+}
+int insert(const char *s) // 在Trie树上插入单词s
+{
+    int u = 0;
+    for (auto p = s; *p; p++)
+    {
+        int &v = ac[u].nxt[*p - 'a'];
+        if (!v) v = makenode();
+        u = v;
+    }
+    return u; // 返回单词在AC自动机上的位置
+}
+void build() // 求fail指针，并建立fail树
+{
+    fill_n(head, sz + 1, -1), edgeid = 0; // 链式前向星的初始化
+    queue<int> Q;
+    for (int v : ac[0].nxt)
+    {
+        if (v)
+        {
+            addedge(0, v);
+            Q.push(v);
+        }
+    }
+    while (!Q.empty())
+    {
+        Node &fa = ac[Q.front()]; Q.pop();
+        for (int i = 0; i < 26; i++)
+        {
+            int &v = fa.nxt[i];
+            if (v)
+            {
+                ac[v].fail = ac[fa.fail].nxt[i];
+                addedge(ac[v].fail, v);
+                Q.push(v);
+            }
+            else v = ac[fa.fail].nxt[i];
+        }
+    }
+}
+void walk(const char *s) // 在AC自动机上按照字符串s转移
+{
+    int u = 0;
+    for (auto p = s; *p; p++)
+    {
+        u = ac[u].nxt[*p - 'a'];
+        ac[u].cnt++;
+    }
+}
+void dfs(int u) // fail树上的DP，沿fail指针向上传递
+{
+    for (int i = head[u]; ~i; i = edges[i].nxt)
+    {
+        int v = edges[i].to;
+        dfs(v);
+        ac[u].cnt += ac[v].cnt; // v匹配了，后缀u也会匹配
+    }
+}
+
+char s[2000010];
+int pos[MAXN];
+int main()
+{
+    int n;
+    while (readi(n) != EOF)
+    {
+        sz = -1, makenode(); // AC自动机的初始化
+        repne(i, 0, n)
+        {
+            reads(s); // 模式串
+            pos[i] = insert(s); // 记录单词在AC自动机上的位置
+        }
+        build(); // 建fail树
+        reads(s); // 文本串
+        walk(s); // 多模板匹配
+        dfs(0);  // 统计每个单词匹配的次数
+        repne(i, 0, n) printf("%d\n", ac[pos[i]].cnt);
+    }
+    return 0;
+}
+```
 
 
 
@@ -5609,8 +5718,8 @@ int main()
 ```c++
 const int MAXN = 1e5 + 10;
 struct Node
-{
-    int link, len, nxt[26]; // 后缀链接，当前节点可以表示的最长子串长度
+{                           // link-后缀链接，指向当前子串的后缀
+    int link, len, nxt[26]; // len-当前节点可以表示所有子串的最大长度
 } sam[MAXN << 1];
 int sz = 1, last = 1; // 后缀自动机节点个数，最新的节点编号
 void extend(int ch)
