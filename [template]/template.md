@@ -405,7 +405,7 @@ int main()
 
 【题目】填写数独
 
-【思路】精确覆盖问题是指：一个二进制串可以覆盖为1的位对应的列，求一种选择一些二进制串恰好覆盖所有列的方案。对于数独问题，为精确覆盖所有列的问题，使用DLX算法求解。规定第$i\times9+j$列表示第$i$行数字$j$已被使用，第$81+i\times9+j$列表示第$i$列数字$j$已被使用，第$81\times2+i\times9+j$表示第$i$个九宫数字$j$已被使用，第$81\times3+i\times9+j$列表示第$i$行$j$列已被填充，“第$x$行$y$列填写数字$i$”的方案对应一个二进制串。
+【思路】精确覆盖问题是指：一个二进制串可以覆盖为1的位对应的列，求一种选择一些二进制串不重不漏地覆盖所有列的方案。对于数独问题，可以转换为精确覆盖所有列的问题，使用DLX算法求解。规定第$i\times9+j$列表示第$i$行数字$j$已被使用，第$81+i\times9+j$列表示第$i$列数字$j$已被使用，第$81\times2+i\times9+j$表示第$i$个九宫数字$j$已被使用，第$81\times3+i\times9+j$列表示第$i$行$j$列已被填充，“第$x$行$y$列填写数字$i$”的方案对应一个二进制串。
 
 ```c++
 const int MAX_ROW = 81 * 9;
@@ -1526,7 +1526,7 @@ struct Treap
         if(lsz < size)
         {
             l = p;
-            splitBySize(size - lsz - tree[p].cnt, tree[p].son[1], tree[l].son[1], r);
+            splitBySize(size-lsz-tree[p].cnt, tree[p].son[1], tree[l].son[1], r);
         }
         else
         {
@@ -2820,6 +2820,8 @@ int main()
 }
 ```
 
+
+
 ###  树链剖分
 
 【题号】LUOGU3384
@@ -3261,7 +3263,7 @@ int main()
 
 【题号】LUOGU1501
 
-【题目】在动态连边和删边的树上，维护链上的节点权值和
+【题目】在动态连边和删边的树上，维护链上的节点权值和与积
 
 ```c++
 const int MAXN = 1e5 + 10;
@@ -3668,6 +3670,8 @@ int main()
 }
 ```
 
+
+
 ### 最短路
 
 #### Dijkstra
@@ -3953,7 +3957,7 @@ int main()
 
 【题号】LUOGU4716
 
-【题目】最小树形图模板题，有向图上，给定根节点，求边权最小的生成树。
+【题目】最小树形图模板题：有向图上，给定根节点，求边权最小的生成树。
 
 <font color="gray" size="2">朱-刘算法的时间复杂度为$O(nm)$，其中$n$为节点数，$m$为边数。Tarjan优化后复杂度可降为为$O(m+nlogn)$，详见[论文](http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=0EBCB45B7531F2F741045E5C7452754E?doi=10.1.1.402.8171&rep=rep1&type=pdf)。</font>
 
