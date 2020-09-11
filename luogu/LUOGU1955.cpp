@@ -1,8 +1,8 @@
 /**
 * Number:LUOGU1955
 * Title: [NOI2015]程序自动分析
-* Status:?
-* Tag:[]
+* Status:AC
+* Tag:[并查集]
 **/
 
 #include <cstdio>
